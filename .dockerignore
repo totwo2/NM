@@ -1,0 +1,11 @@
+.venv
+__pycache__
+*.pyc
+.git
+.gitignore
+.pytest_cache
+*.egg-info
+.harness
+Dockerfile
+start.sh
+test_e2e.py

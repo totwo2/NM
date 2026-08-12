@@ -1,0 +1,4 @@
+include requirements.txt
+include start.sh
+include web/static/index.html
+recursive-include harness *.py

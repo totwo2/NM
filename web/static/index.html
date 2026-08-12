@@ -1,0 +1,2142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>WorkBuddy AI · 智能办公助手</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f4f6fa;--card:#fff;--border:#e6ebf2;--text:#1a2332;--muted:#8590a0;
+  --primary:#2566e8;--accent:#0e8a6f;--warn:#d97706;--danger:#dc2626;
+  --red-header:#c41e3a;--sidebar:#2c3e50;--sidebar-w:220px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5}
+.app{display:grid;grid-template-columns:var(--sidebar-w) 1fr;min-height:100vh}
+
+/* 侧栏 */
+.sidebar{background:var(--sidebar);color:#fff;padding:14px 0}
+.logo{padding:6px 20px 14px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;border-bottom:1px solid #3a4d63;margin-bottom:10px}
+.logo .dot{width:22px;height:22px;background:linear-gradient(135deg,#2566e8,#0e8a6f);border-radius:6px}
+.sg{margin-bottom:6px}
+.sgt{color:#7a8a9b;font-size:10px;padding:6px 20px 4px;letter-spacing:1px}
+.si{display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;font-size:13px;border-left:3px solid transparent}
+.si:hover{background:#1f2d3d}
+.si.act{background:#1f2d3d;border-left-color:var(--primary);font-weight:600}
+.si .ic{font-size:15px;width:18px;text-align:center}
+.si .badge{margin-left:auto;background:var(--danger);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:600}
+
+/* 主区 */
+.main{display:flex;flex-direction:column}
+.topbar{height:56px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px;position:sticky;top:0;z-index:10}
+.topbar h1{font-size:15px;font-weight:600}
+.topbar .crumb{color:var(--muted);font-size:11px}
+.topbar .right{margin-left:auto;display:flex;gap:10px;align-items:center}
+.topbar .act{padding:5px 8px;border-radius:5px;color:var(--muted);font-size:11px;cursor:pointer}
+.topbar .act:hover{background:var(--bg)}
+.topbar .kbd{background:#fff;border:1px solid var(--border);padding:1px 5px;border-radius:3px;font-size:10px;font-family:monospace}
+.topbar .av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#2566e8,#0e8a6f);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+
+/* 问候条 */
+.greet{background:linear-gradient(90deg,#2566e8,#0e8a6f);color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.greet b{font-size:15px;margin-right:10px}
+.greet .hl{color:#ffd700;font-weight:700;margin:0 3px}
+
+/* 2列布局：左宽右窄 */
+.portal{padding:14px 20px;display:grid;grid-template-columns:2fr 1fr;gap:14px;align-items:start}
+
+/* ====== 卡片通用 ====== */
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.ch{padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.ct{font-size:13px;font-weight:600;color:var(--primary);display:flex;align-items:center;gap:6px}
+.tabs{display:flex;gap:10px;font-size:11px}
+.tab{padding:3px 6px;color:var(--muted);cursor:pointer;border-radius:3px}
+.tab.act{color:var(--primary);background:#e8f0ff;font-weight:600}
+.more{font-size:11px;color:var(--muted);cursor:pointer}
+
+/* ====== 形态 A：大图轮播（5张） ====== */
+.hero{height:220px;background:linear-gradient(135deg,#c41e3a,#7a0010);position:relative;cursor:pointer;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.75) 0%,rgba(0,0,0,.1) 50%,transparent)}
+.hero .tag{position:absolute;top:10px;left:14px;background:rgba(255,255,255,.95);color:var(--danger);font-size:10px;padding:2px 8px;border-radius:3px;font-weight:600;z-index:1}
+.hero .dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:1}
+.hero .dot{width:20px;height:3px;background:rgba(255,255,255,.4);border-radius:1px}
+.hero .dot.act{background:#fff}
+.hero .ti{position:absolute;bottom:28px;left:16px;right:16px;color:#fff;font-size:15px;font-weight:600;z-index:1;line-height:1.4}
+.hero .meta{position:absolute;bottom:8px;left:16px;color:rgba(255,255,255,.8);font-size:10px;z-index:1}
+.hero .arrows{position:absolute;top:50%;transform:translateY(-50%);width:100%;display:flex;justify-content:space-between;padding:0 10px;opacity:0;transition:opacity .2s}
+.hero:hover .arrows{opacity:1}
+.hero .arrow{width:32px;height:32px;background:rgba(0,0,0,.4);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px}
+
+/* ====== 形态 B：文字列表 ====== */
+.list{padding:4px 0}
+.item{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-bottom:1px solid #f0f2f5;cursor:pointer;font-size:12px}
+.item:hover{background:#fafbfc}
+.item:last-child{border-bottom:none}
+.item .l{display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+.item .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.item .a{color:var(--muted);font-size:10px}
+.item .d{color:var(--muted);font-size:10px;margin-left:8px;white-space:nowrap}
+.item.urg .t{color:var(--danger);font-weight:600}
+
+/* 待办卡 */
+.todo-sum{padding:8px 14px;background:linear-gradient(90deg,#fef3c7,#fff);font-size:11px;color:#92400e;border-bottom:1px solid var(--border)}
+.todo-sum .num{font-size:18px;font-weight:700;color:var(--danger);margin:0 3px}
+.todo-row{padding:10px 14px;border-bottom:1px solid #f0f2f5;cursor:pointer}
+.todo-row:hover{background:#fafbfc}
+.todo-row .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.todo-row .tag2{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:600}
+.tag2.exp{background:#e8f0ff;color:#2566e8}
+.tag2.prt{background:#fef3c7;color:#92400e}
+.tag2.lv{background:#d1fae5;color:#065f46}
+.tag2.cnt{background:#fce7f3;color:#9d174d}
+.todo-row .ti2{font-size:13px;font-weight:500;margin-bottom:3px}
+.todo-row .meta{font-size:10px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}
+.todo-row .meta .red{color:var(--danger);font-weight:600}
+.todo-row .meta .org{color:#d97706;font-weight:600}
+.todo-row .btns{display:flex;gap:6px;margin-top:6px}
+.btn{padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;border:1px solid var(--border);background:#fff}
+.btn.p{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn.w{background:var(--warn);color:#fff;border-color:var(--warn)}
+.todo-batch{padding:8px 14px;background:#f9fafb;border-top:1px solid var(--border);font-size:11px;display:flex;justify-content:space-between;align-items:center}
+
+/* 日程 */
+.sch-list{padding:4px 0}
+.sch-row{display:grid;grid-template-columns:60px 1fr;gap:10px;padding:8px 14px;border-bottom:1px solid #f0f2f5;cursor:pointer}
+.sch-row:hover{background:#fafbfc}
+.sch-row .tm{font-size:12px;color:var(--primary);font-weight:600}
+.sch-row .dur{font-size:10px;color:var(--muted);font-weight:400;margin-top:2px}
+.sch-row .ev{font-size:12px;font-weight:500}
+.sch-row .em{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* ====== 新样式 ====== */
+/* AI 助手卡片 */
+.ai-card{background:linear-gradient(135deg,#2566e8,#0e8a6f);color:#fff;padding:18px;display:flex;align-items:center;gap:14px}
+.ai-card .ic{font-size:32px}
+.ai-card .info h3{font-size:15px;font-weight:600;margin-bottom:4px}
+.ai-card .info p{font-size:11px;opacity:.85}
+.ai-card .btn{background:#fff;color:var(--primary);border:none;padding:7px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;margin-left:auto}
+
+/* 查询中心 */
+.query-grid{padding:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.qitem{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border-radius:6px;cursor:pointer;font-size:12px;background:#f8fafc;border:1px solid var(--border);text-align:center}
+.qitem:hover{background:#e8f0ff;border-color:var(--primary)}
+.qitem .ic{width:32px;height:32px;background:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;border:1px solid var(--border)}
+
+/* 审批列表 */
+.approval-list{padding:4px 0}
+.approval-item{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #f0f2f5;cursor:pointer;font-size:12px}
+.approval-item:hover{background:#fafbfc}
+.approval-item:last-child{border-bottom:none}
+.approval-item .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.approval-item .tag{font-size:10px;padding:2px 8px;border-radius:3px;font-weight:600;margin-right:8px}
+.tag.pending{background:#e8f0ff;color:#2566e8}
+.tag.approved{background:#d1fae5;color:#065f46}
+.tag.rejected{background:#fee2e2;color:#dc2626}
+
+/* 新闻弹窗 */
+.ai-fab{position:fixed;bottom:24px;right:24px;background:linear-gradient(135deg,#2566e8,#0e8a6f);color:#fff;padding:12px 20px;border-radius:28px;box-shadow:0 8px 24px rgba(37,102,232,.35);cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;z-index:100}
+.ai-fab:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(37,102,232,.45)}
+
+.news-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.news-overlay.show{opacity:1;pointer-events:auto}
+.news-modal{background:#fff;border-radius:12px;width:90%;max-width:640px;max-height:80vh;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);transform:scale(.95);transition:transform .3s}
+.news-overlay.show .news-modal{transform:scale(1)}
+.news-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.news-header h3{font-size:15px;font-weight:600}
+.news-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.news-close:hover{background:var(--bg)}
+.news-body{padding:24px;min-height:200px}
+.news-item{display:none}
+.news-item.active{display:block;animation:fadeIn .4s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.news-item .tag{display:inline-block;padding:3px 10px;border-radius:3px;font-size:10px;font-weight:600;margin-bottom:12px}
+.news-item h2{font-size:18px;font-weight:600;margin-bottom:8px;line-height:1.4}
+.news-item p{color:var(--muted);font-size:13px;line-height:1.7}
+.news-dots{padding:12px 20px;display:flex;justify-content:center;gap:8px}
+.news-dot{width:8px;height:8px;border-radius:50%;background:var(--border);cursor:pointer;transition:all .2s}
+.news-dot.active{background:var(--primary);width:24px;border-radius:4px}
+.news-footer{padding:10px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+/* 聊天面板 */
+.chat-panel{position:fixed;top:0;right:0;width:420px;height:100vh;background:#fff;z-index:200;box-shadow:-8px 0 32px rgba(0,0,0,.12);display:flex;flex-direction:column;animation:slideIn .25s ease}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.chat-hdr{padding:14px 18px;background:linear-gradient(90deg,#2566e8,#0e8a6f);color:#fff;font-size:15px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.chat-close{background:none;border:none;color:#fff;font-size:22px;cursor:pointer}
+.chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.chat-input-row{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end}
+.chat-input-row textarea{flex:1;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;resize:none;outline:none;font-family:inherit}
+.chat-input-row textarea:focus{border-color:var(--primary)}
+.chat-send{padding:10px 18px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600}
+.chat-skills{padding:8px 14px 14px;display:flex;flex-wrap:wrap;gap:6px}
+.skill-chip{padding:5px 12px;background:#f0f7ff;color:var(--primary);border-radius:14px;font-size:11px;cursor:pointer;border:1px solid #d6e6ff}
+.skill-chip:hover{background:#e0f0ff}
+.msg{padding:10px 14px;border-radius:10px;max-width:85%;font-size:13px;line-height:1.6;word-break:break-word}
+.msg.sys{background:#f0f7ff;color:var(--primary);align-self:flex-start}
+.msg.user{background:var(--primary);color:#fff;align-self:flex-end}
+.msg.assistant{background:#f5f6f8;color:var(--text);align-self:flex-start}
+.typing{animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.4}}
+
+/* Sub Views */
+.sub-view{display:none}
+.sub-view.show{display:block}
+
+/* Toast */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 24px;border-radius:8px;font-size:13px;z-index:300;box-shadow:0 4px 16px rgba(0,0,0,.2);transition:opacity .3s}
+
+/* Responsive */
+@media(max-width:768px){.chat-panel{width:100%}.portal{grid-template-columns:1fr}.query-grid{grid-template-columns:repeat(2,1fr)}}
+.shortcut-grid{padding:12px;display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.scut{display:flex;align-items:center;gap:8px;padding:8px;border-radius:5px;cursor:pointer;font-size:12px}
+.scut:hover{background:#f0f7ff}
+.scut .ic{width:28px;height:28px;background:#e8f0ff;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:14px}
+
+/* PDF */
+.pdf-list{padding:4px 0}
+.pdf-row{display:flex;justify-content:space-between;align-items:center;padding:7px 14px;border-bottom:1px solid #f0f2f5;font-size:11px;cursor:pointer}
+.pdf-row:hover{background:#fafbfc}
+.pdf-row .n{display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+.pdf-row .n .pdf{color:var(--danger);font-size:9px;padding:1px 3px;border:1px solid currentColor;border-radius:2px;font-weight:700}
+.pdf-row .n .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pdf-row .d{color:var(--muted);font-size:10px;margin-left:8px;white-space:nowrap}
+
+.n-icon{color:var(--muted);font-size:12px;width:14px}
+
+/* AI 悬浮 */
+.ai-fab{position:fixed;bottom:24px;right:24px;background:linear-gradient(135deg,#2566e8,#0e8a6f);color:#fff;padding:12px 20px;border-radius:28px;box-shadow:0 8px 24px rgba(37,102,232,.35);cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;z-index:100}
+.ai-fab:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(37,102,232,.45)}
+
+/* 备注 */
+.note{margin:14px 20px 24px;padding:14px 18px;background:#fff8e6;border:1px solid #f0d68a;border-radius:8px;font-size:11px;color:#5c4a1f;line-height:1.7}
+.note b{color:#92400e}
+.note ul{margin-left:18px;margin-top:4px}
+.note li{margin-bottom:2px}
+</style></head>
+<body>
+
+<!-- 登录视图（独立渲染：占满全屏，登录后消失） -->
+<div id="view-login" class="sub-view show" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a3a5c 0%,#0e8a6f 100%);z-index:1000">
+  <div style="background:#fff;padding:48px;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-width:420px;width:90%">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="font-size:48px;margin-bottom:8px">🏢</div>
+      <h1 style="font-size:24px;color:#1a3a5c;margin-bottom:8px">WorkBuddy AI</h1>
+      <p style="color:#666;font-size:14px">企业智能办公助手</p>
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:13px;color:#333;margin-bottom:6px">用户名</label>
+      <input id="login-username" type="text" placeholder="输入用户名" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:14px;outline:none" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div style="margin-bottom:24px">
+      <label style="display:block;font-size:13px;color:#333;margin-bottom:6px">密码</label>
+      <input id="login-password" type="password" placeholder="演示版可留空" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:14px;outline:none" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button onclick="doLogin()" style="width:100%;padding:14px;background:linear-gradient(90deg,#2566e8,#0e8a6f);color:#fff;border:none;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer">登 录</button>
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid #eee">
+      <div style="font-size:12px;color:#999;margin-bottom:8px">演示账号（点击直接登录）：</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;font-size:12px">
+        <div onclick="quickLogin('admin')" style="padding:8px;background:#f5f5f5;border-radius:4px;cursor:pointer;text-align:center">👑 超管</div>
+        <div onclick="quickLogin('im_admin')" style="padding:8px;background:#f5f5f5;border-radius:4px;cursor:pointer;text-align:center">💬 IM管理员</div>
+        <div onclick="quickLogin('oa_admin')" style="padding:8px;background:#f5f5f5;border-radius:4px;cursor:pointer;text-align:center">📋 OA管理员</div>
+        <div onclick="quickLogin('zhangsan')" style="padding:8px;background:#f5f5f5;border-radius:4px;cursor:pointer;text-align:center">👤 普通员工</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="app-container" style="display:none">
+  <aside class="sidebar">
+    <div class="logo"><span class="dot"></span> WorkBuddy AI</div>
+    <div class="sg"><div class="si act" data-view="home"><span class="ic">🏠</span> 首页</div></div>
+    <div class="sg">
+      <div class="sgt">AI 智能体</div>
+      <div class="si" data-view="ai-chat"><span class="ic">✨</span> AI 助手</div>
+      <div class="si" data-view="approval"><span class="ic">✅</span> 审批中心 <span class="badge" id="approval-badge">0</span></div>
+    </div>
+    <div class="sg">
+      <div class="sgt">通信</div>
+      <div class="si" data-view="groups"><span class="ic">💬</span> 部门群组</div>
+    </div>
+    <div class="sg">
+      <div class="sgt">查询</div>
+      <div class="si" data-view="query"><span class="ic">🔍</span> 查询中心</div>
+    </div>
+    <div class="sg" id="admin-sg" style="display:none">
+      <div class="sgt">⚙️ 管理</div>
+      <div class="si" data-view="im-settings" id="nav-im-settings" style="display:none"><span class="ic">💬</span> IM 设置</div>
+      <div class="si" data-view="oa-settings" id="nav-oa-settings" style="display:none"><span class="ic">📋</span> OA 设置</div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <h1>首页门户</h1>
+      <span class="crumb">/ 默认首页</span>
+      <div class="right">
+        <div class="act">🔍 搜索 · <span class="kbd">⌘K</span></div>
+        <div class="act">🔔 通知 <span class="badge" style="position:relative;top:-6px;margin-left:2px">6</span></div>
+        <div class="act">⚙️ 设置</div>
+        <div class="av">王</div>
+      </div>
+    </header>
+
+    <div class="greet">
+      <div><b id="greet-text">早上好</b> 待办 <span class="hl" id="todo-count">0</span> · 审批 <span class="hl" id="approval-count">0</span> · <span id="cache-stats" style="color:#ffd700;font-size:11px;margin-left:8px"></span></div>
+      <div id="today-date"></div>
+    </div>
+    <div id="cache-badge" style="display:none;text-align:right;padding:2px 16px;font-size:11px;color:var(--accent);background:#f0fdf4;border-radius:4px;margin:-4px 0 0"></div>
+
+    <!-- ==================== 2列布局 ==================== -->
+<div id="view-home" class="sub-view show" style="position:relative;height:calc(100vh - 60px);overflow:hidden">
+
+      <!-- 第0层：致远OA首页（默认显示，10秒后自动折叠） -->
+      <div id="layer-0" style="position:absolute;inset:0;background:#f5f7fa;overflow-y:auto;padding:20px">
+        <div class="portal">
+          <!-- 左列：新闻 + 待办 + 通知 -->
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="card">
+              <div class="ch">
+                <div class="ct">📰 集团新闻焦点</div>
+                <div class="tabs"><span class="tab act">最新</span><span class="tab">党建</span><span class="tab">经营</span></div>
+              </div>
+              <div style="font-size:11px;color:var(--muted);padding:0 16px 6px">← 5条新闻自动轮播中 →</div>
+              <div class="hero">
+                <span class="tag">焦点</span>
+                <div class="dots" id="home-hero-dots">
+                  <div class="dot act"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                </div>
+                <div class="ti" id="home-hero-title">公司党委召开2026年上半年全面从严治党分析研判会</div>
+                <div class="meta" id="home-hero-meta">2026-08-04 · 党委办公室</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="ch">
+                <div class="ct">📋 待办概览</div>
+                <div class="tabs"><span class="tab act">待审批 (5)</span><span class="tab">我发起</span><span class="tab">催办</span></div>
+              </div>
+              <div class="list" id="home-todo-list"></div>
+            </div>
+
+            <div class="card">
+              <div class="ch">
+                <div class="ct">📢 通知公告</div>
+                <span class="more">更多 →</span>
+              </div>
+              <div class="list">
+                <div class="item urg"><div class="l"><span class="n-icon">📌</span><span class="t">关于做好2026年防汛抗台期间安全播出工作的通知</span></div><span class="d">08-04</span></div>
+                <div class="item"><div class="l"><span class="n-icon">📌</span><span class="t">关于开展2026年第三季度安全检查的通知</span></div><span class="d">08-01</span></div>
+                <div class="item"><div class="l"><span class="n-icon">📌</span><span class="t">关于表彰2026年第二季度"党员先锋岗"的决定</span></div><span class="d">07-29</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 右列：查阅入口 + 今日日程 -->
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="card">
+              <div class="ch">
+                <div class="ct">🔍 查阅类</div>
+                <span class="more" style="color:var(--primary)">💬 问 AI →</span>
+              </div>
+              <div class="shortcut-grid">
+                <div class="scut"><div class="ic">📤</div>发文查询</div>
+                <div class="scut"><div class="ic">📥</div>收文查询</div>
+                <div class="scut"><div class="ic">📚</div>知识库</div>
+                <div class="scut"><div class="ic">📇</div>通讯录</div>
+                <div class="scut"><div class="ic">📜</div>制度文件</div>
+                <div class="scut"><div class="ic">🎓</div>学习园地</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="ch">
+                <div class="ct">📅 今日日程</div>
+                <span class="more">日历 →</span>
+              </div>
+              <div class="sch-list">
+                <div class="sch-row"><div><div class="tm">09:30</div></div><div><div class="ev">党委会</div><div class="em">📍 5楼会议室</div></div></div>
+                <div class="sch-row"><div><div class="tm">14:00</div></div><div><div class="ev">Q2 经营分析会</div><div class="em">📍 3楼报告厅</div></div></div>
+                <div class="sch-row"><div><div class="tm">16:30</div></div><div><div class="ev">合同审批</div><div class="em">📍 线上</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 第1层：AI 聊天（默认隐藏，10秒后显示） -->
+      <div id="layer-1" style="position:absolute;inset:0;background:#f5f7fa;display:none;padding:20px">
+        <div style="display:flex;flex-direction:column;height:100%;background:#fff;border-radius:8px;border:1px solid var(--border);overflow:hidden;position:relative">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:.03;z-index:0">
+            <div style="font-size:200px;font-weight:800;color:#000">WB</div>
+          </div>
+          <div style="padding:12px 16px;background:linear-gradient(90deg,#2566e8,#0e8a6f);color:#fff;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1">
+            <span>✨ AI 助手</span>
+            <span style="font-size:11px;opacity:.8">在线</span>
+          </div>
+          
+          <!-- 消息展示区 -->
+          <div id="home-chat-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;position:relative;z-index:1">
+            <div class="msg sys" style="align-self:flex-start;background:#f0f7ff;color:var(--primary);padding:10px 14px;border-radius:10px;max-width:85%;font-size:13px;line-height:1.6">
+              你好，我是 AI 助手。可以帮你写公文、分析数据、处理审批。有什么需要？
+            </div>
+          </div>
+
+          <!-- 可拖动的分隔条 -->
+          <div id="chat-divider" style="height:6px;background:linear-gradient(to bottom,#f0f0f0,#e0e0e0);cursor:ns-resize;position:relative;z-index:2;display:flex;align-items:center;justify-content:center;transition:background .2s" onmouseover="this.style.background='#cce5ff'" onmouseout="this.style.background='linear-gradient(to bottom,#f0f0f0,#e0e0e0)'">
+            <div style="width:40px;height:2px;background:#999;border-radius:2px"></div>
+          </div>
+
+          <!-- 输入区 -->
+          <div id="home-chat-input-area" style="height:25%;min-height:120px;border-top:1px solid var(--border);display:flex;flex-direction:column;padding:10px 14px;position:relative;z-index:1;background:#fafafa">
+            <textarea id="home-chat-input" placeholder="输入消息..." style="flex:1;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;resize:none;outline:none;font-family:inherit;background:#fff;line-height:1.6" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendHomeChat()}"></textarea>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+              <span style="font-size:11px;color:var(--muted)">提示: Enter 发送, Shift+Enter 换行</span>
+              <button onclick="sendHomeChat()" style="padding:8px 20px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">发送</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div></div>
+
+<!-- Approval View -->
+<!-- IM 设置视图（仅 IM 管理员 / 超管可见） -->
+<div id="view-im-settings" class="sub-view">
+  <div style="padding:20px">
+    <div class="card">
+      <div class="ch">
+        <div class="ct">💬 IM 设置</div>
+        <button class="btn p" onclick="showCreateGroupPrompt()" style="font-size:12px;padding:6px 14px">+ 新建群组</button>
+      </div>
+      <div class="list" id="im-settings-list">
+        <div style="color:var(--muted);padding:20px;text-align:center">加载中...</div>
+      </div>
+    </div>
+
+    <!-- ====== 员工花名册（导入/同步） ====== -->
+    <div class="card" style="margin-top:14px">
+      <div class="ch">
+        <div class="ct">👥 员工花名册</div>
+        <div style="display:flex;gap:8px">
+          <label class="btn" style="cursor:pointer;font-size:12px;padding:6px 14px;background:#fff;border:1px solid var(--border);border-radius:6px;color:var(--text)">
+            📥 导入文件
+            <input type="file" id="user-import-file" accept=".csv,.tsv,.xlsx,.xls" style="display:none" onchange="handleUserImport(this.files[0])">
+          </label>
+          <button class="btn" onclick="showHRSyncDialog()" style="font-size:12px;padding:6px 14px;background:#fff;border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer">🔄 HR 系统同步</button>
+          <button class="btn" onclick="downloadUserTemplate()" style="font-size:12px;padding:6px 14px;background:#fff;border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer">📋 下载模板</button>
+        </div>
+      </div>
+      <div id="user-import-result" style="padding:14px"></div>
+      <div class="list" id="user-roster-list">
+        <div style="color:var(--muted);padding:20px;text-align:center">加载中...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HR 同步对话框 -->
+<div id="hr-sync-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:10px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto">
+    <h3 style="margin-bottom:14px;font-size:16px">🔄 HR 系统同步</h3>
+    <div style="margin-bottom:12px;padding:12px;background:#f5f7fa;border-radius:6px;font-size:13px;color:#666;line-height:1.6">
+      将 HR 系统返回的 JSON 粘贴到下方，系统会检测差异：<br>
+      • 新增员工 → 自动创建账号<br>
+      • 已在场员工 → 更新部门/职位<br>
+      • 未出现员工 → 标记为离职（不删除）
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="display:block;font-size:12px;color:#666;margin-bottom:4px">JSON 数据</label>
+      <textarea id="hr-sync-json" rows="8" placeholder='[{"user_id":"e001","name":"张三","department":"研发部","role":"staff"}]' style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;font-family:monospace;font-size:12px"></textarea>
+    </div>
+    <div id="hr-sync-preview" style="margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="document.getElementById('hr-sync-modal').style.display='none'" style="padding:8px 16px;background:#f5f5f5;border:none;border-radius:6px;cursor:pointer">取消</button>
+      <button onclick="commitHRSync()" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer">确认同步</button>
+    </div>
+  </div>
+</div>
+
+<!-- OA 设置视图（仅 OA 管理员 / 超管可见） -->
+<div id="view-oa-settings" class="sub-view">
+  <div style="padding:20px">
+    <div class="card">
+      <div class="ch">
+        <div class="ct">📋 OA 流程模板</div>
+        <span style="font-size:12px;color:var(--muted)">共 <span id="oa-template-count">0</span> 个模板</span>
+      </div>
+      <div class="list" id="oa-settings-list">
+        <div style="color:var(--muted);padding:20px;text-align:center">加载中...</div>
+      </div>
+    </div>
+
+    <!-- ====== 流程模板导入 ====== -->
+    <div class="card" style="margin-top:14px">
+      <div class="ch">
+        <div class="ct">📥 流程模板管理</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label class="btn" style="cursor:pointer;font-size:12px;padding:6px 14px;background:#fff;border:1px solid var(--border);border-radius:6px;color:var(--text)">
+            📄 从 CSV/Excel 导入
+            <input type="file" id="def-import-file" accept=".csv,.tsv,.xlsx,.xls" style="display:none" onchange="handleDefImport(this.files[0])">
+          </label>
+          <button class="btn" onclick="showOAScreenshotDialog()" style="font-size:12px;padding:6px 14px;background:#fff;border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer">📸 截图 AI 分析</button>
+          <button class="btn" onclick="showOATextDialog()" style="font-size:12px;padding:6px 14px;background:#fff;border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer">📝 文本描述创建</button>
+          <button class="btn" onclick="exportOADefs()" style="font-size:12px;padding:6px 14px;background:#fff;border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer">⤓ 导出全部</button>
+        </div>
+      </div>
+      <div id="def-import-result" style="padding:14px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- OA 截图分析对话框 -->
+<div id="oa-screenshot-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:10px;padding:24px;max-width:720px;width:90%;max-height:85vh;overflow-y:auto">
+    <h3 style="margin-bottom:14px;font-size:16px">📸 截图 AI 分析（从老系统导入）</h3>
+    <div style="margin-bottom:14px;padding:12px;background:#f5f7fa;border-radius:6px;font-size:13px;color:#666;line-height:1.6">
+      把老系统（致远/泛微等）审批流程页面的截图上传，AI 会识别：<br>
+      ① 表单字段（请假类型/金额/事由…）<br>
+      ② 审批节点（直属领导/部门负责人/HR…）<br>
+      ③ 节点顺序与可选跳规则
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:12px;color:#666;margin-bottom:4px">上传截图</label>
+      <input type="file" id="oa-screenshot-file" accept="image/*" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:12px;color:#666;margin-bottom:4px">补充说明（可选）</label>
+      <textarea id="oa-screenshot-hint" rows="2" placeholder="例如：金额超1万需总经理审批" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px"></textarea>
+    </div>
+    <div id="oa-screenshot-result" style="margin-bottom:14px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="document.getElementById('oa-screenshot-modal').style.display='none'" style="padding:8px 16px;background:#f5f5f5;border:none;border-radius:6px;cursor:pointer">取消</button>
+      <button onclick="analyzeScreenshot()" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer">🔍 分析并生成模板</button>
+    </div>
+  </div>
+</div>
+
+<!-- OA 文本描述创建对话框 -->
+<div id="oa-text-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:10px;padding:24px;max-width:600px;width:90%;max-height:85vh;overflow-y:auto">
+    <h3 style="margin-bottom:14px;font-size:16px">📝 文本描述创建模板</h3>
+    <div style="margin-bottom:14px;padding:12px;background:#f5f7fa;border-radius:6px;font-size:13px;color:#666;line-height:1.6">
+      用自然语言描述审批流程。示例：<br>
+      <i>“请假审批：表单需要请假类型、起止日期、天数、事由。审批依次是直属领导、部门负责人、HR备案。”</i>
+    </div>
+    <textarea id="oa-text-desc" rows="6" placeholder="例如：出差审批。需要字段：出差地点、天数、预算。审批节点：直属领导→部门负责人→总经理。" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;font-size:13px"></textarea>
+    <div id="oa-text-result" style="margin:14px 0"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="document.getElementById('oa-text-modal').style.display='none'" style="padding:8px 16px;background:#f5f5f5;border:none;border-radius:6px;cursor:pointer">取消</button>
+      <button onclick="analyzeTextDesc()" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer">生成模板</button>
+    </div>
+  </div>
+</div>
+
+<div id="view-approval" class="sub-view">
+  <div class="portal" style="grid-template-columns:1fr">
+    <div class="card" style="margin-bottom:14px">
+      <div class="ch">
+        <div class="ct">📋 审批中心</div>
+        <div class="tabs">
+          <span class="tab act" data-tab="pending">待审批</span>
+          <span class="tab" data-tab="started">我发起</span>
+          <span class="tab" data-tab="history">已办</span>
+          <span class="tab" data-tab="drafts">草稿</span>
+        </div>
+      </div>
+      <div id="approval-list" class="approval-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Groups View -->
+<div id="view-groups" class="sub-view">
+  <div class="portal" style="grid-template-columns:260px 1fr">
+    <div class="card" style="margin-bottom:14px">
+      <div class="ch">
+        <div class="ct">💬 群组列表</div>
+        <button class="btn p" onclick="createGroupPrompt()" style="font-size:11px;padding:4px 10px">+ 新建</button>
+      </div>
+      <div id="group-list" class="list"></div>
+    </div>
+    <div class="card" style="margin-bottom:14px;display:flex;flex-direction:column">
+      <div class="ch" id="chat-header">
+        <div class="ct">💬 选择一个群组</div>
+        <div id="chat-meta" style="font-size:11px;color:var(--muted)"></div>
+      </div>
+      <div id="chat-messages" style="flex:1;overflow-y:auto;padding:14px;min-height:400px;display:flex;flex-direction:column;gap:8px">
+        <div style="text-align:center;color:var(--muted);padding:40px 0">👈 从左侧选择一个群组开始聊天</div>
+      </div>
+      <div id="chat-input-row" class="chat-input-row" style="display:none;border-top:1px solid var(--border);padding:10px 14px">
+        <textarea id="chatInput" placeholder="输入消息..." rows="1" onkeydown="handleChatKey(event)"></textarea>
+        <button onclick="sendChatMessage()" class="chat-send" style="padding:10px 18px">发送</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Query Center View -->
+<div id="view-query" class="sub-view">
+  <div class="portal" style="grid-template-columns:repeat(3,1fr)">
+    <div class="card" onclick="showToast('待办查询')"><div class="ch"><div class="ct">📋 待办查询</div></div><div style="padding:20px;text-align:center;color:var(--muted)">查看所有待办事项</div></div>
+    <div class="card" onclick="showToast('日程查询')"><div class="ch"><div class="ct">📅 日程查询</div></div><div style="padding:20px;text-align:center;color:var(--muted)">查看日程安排</div></div>
+    <div class="card" onclick="showToast('通知公告')"><div class="ch"><div class="ct">📢 通知公告</div></div><div style="padding:20px;text-align:center;color:var(--muted)">查看最新通知</div></div>
+    <div class="card" onclick="showToast('通讯录')"><div class="ch"><div class="ct">👥 通讯录</div></div><div style="padding:20px;text-align:center;color:var(--muted)">查找同事</div></div>
+    <div class="card" onclick="showToast('知识库')"><div class="ch"><div class="ct">📚 知识库</div></div><div style="padding:20px;text-align:center;color:var(--muted)">制度文件、学习资料</div></div>
+    <div class="card" onclick="showToast('制度文件')"><div class="ch"><div class="ct">📄 制度文件</div></div><div style="padding:20px;text-align:center;color:var(--muted)">公司规章制度</div></div>
+  </div>
+</div>
+
+<!-- News Modal -->
+<div class="news-overlay" id="news-overlay">
+  <div class="news-modal">
+    <div class="news-header">
+      <h3>📰 集团新闻</h3>
+      <button class="news-close" onclick="closeNews()">×</button>
+    </div>
+    <div class="news-body" id="news-body"></div>
+    <div class="news-dots" id="news-dots"></div>
+    <div class="news-footer">
+      <span style="font-size:11px;color:var(--muted)" id="news-timer-text">5s 后自动关闭</span>
+      
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+const API = '';
+const USER = 'zhangsan';
+let currentView = 'home';
+let chatVisible = false;
+let chatPanel = null;
+let newsTimer = null;
+let newsIndex = 0;
+let defsCache = null;  // 流程模板缓存（5 分钟 TTL）
+let defsCacheTime = 0;
+const DEFS_CACHE_TTL = 5 * 60 * 1000;
+
+// ============================================================
+// 省 token 三原则（企业级成本控制）
+// ① 简单动作直调 API（不经过 LLM）
+// ② 表单抽取用正则（不调 LLM）
+// ③ 复杂动作才走 LLM + 响应缓存（避免重复问）
+// ============================================================
+const _llmCache = new Map();  // key=msg_hash, value={text, ts}
+const LLM_CACHE_TTL = 30 * 60 * 1000;  // 30 分钟
+function _cacheKey(msg, uid) { return uid + '|' + msg.trim().toLowerCase(); }
+function _cacheGet(msg, uid) {
+  const e = _llmCache.get(_cacheKey(msg, uid));
+  if (e && Date.now() - e.ts < LLM_CACHE_TTL) { _cacheStats.hits++; return e.text; }
+  _llmCache.delete(_cacheKey(msg, uid));
+  _cacheStats.misses++;
+  _updateCacheBadge();
+  return null;
+}
+function _cacheSet(msg, uid, text) { _llmCache.set(_cacheKey(msg, uid), {text, ts: Date.now()}); }
+const _cacheStats = {hits: 0, misses: 0, savedTokens: 0};
+function _updateCacheBadge() {
+  const el = document.getElementById('cache-badge');
+  if (!el) return;
+  if (_cacheStats.hits > 0) {
+    el.textContent = `⚡ 今日省 ${_cacheStats.hits * 1200} tokens（${_cacheStats.hits} 次缓存命中）`;
+    el.style.display = 'block';
+  }
+}
+function _estimateSavedTokens(originalText) {
+  // 粗略估算：中文约 1.5 token/字，加上 system prompt  overhead
+  return Math.ceil(originalText.length * 1.5 + 500);
+}
+let newsCountdown = 10;
+let newsCountdownTimer = null;
+let newsMinimized = false;
+
+const NEWS = [
+  {tag:'焦点',title:'公司党委召开2026年上半年全面从严治党分析研判会',date:'2026-08-04',source:'党委办公室'},
+  {tag:'经营',title:'公司组织召开最新提任管理人员集体谈话',date:'2026-07-30',source:'人力资源部'},
+  {tag:'党建',title:'公司党委理论学习中心组举行2026年第七次集体学习',date:'2026-07-26',source:'党委办公室'},
+  {tag:'安全',title:'关于开展2026年第三季度安全检查的通知',date:'2026-08-01',source:'安全部'},
+  {tag:'表彰',title:'关于表彰2026年第二季度"党员先锋岗"的决定',date:'2026-07-29',source:'党委办公室'}
+];
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.si[data-view]').forEach(item => {
+    item.addEventListener('click', () => switchView(item));
+  });
+  document.querySelectorAll('#view-approval .tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#view-approval .tab').forEach(t => t.classList.remove('act'));
+      tab.classList.add('act');
+      loadApprovals(tab.dataset.tab);
+    });
+  });
+  updateHomeNewsCarousel();
+  startHomeNewsRotation();
+
+  // 已登录（token 存在）→ 恢复会话
+  const savedToken = localStorage.getItem('wb_token');
+  if (savedToken) {
+    // 验证 token 并恢复用户信息
+    fetch('/api/auth/me').then(r => {
+      if (r.ok) return r.json();
+      throw new Error('unauthorized');
+    }).then(me => {
+      currentUser = me.user;
+      loadDashboard();
+      showMainUI();
+      // 5秒后自动折叠第0层，展示第1层（AI聊天）
+      homeAutoSwitchTimer = setTimeout(() => switchToLayer1(), 5000);
+      currentLayer = 0;
+    }).catch(() => {
+      localStorage.removeItem('wb_token');
+      document.getElementById('view-login').style.display = 'flex';
+    });
+  } else {
+    document.getElementById('view-login').style.display = 'flex';
+  }
+
+  const now = new Date();
+  document.getElementById('today-date').textContent = now.toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+});
+
+function switchView(item) {
+  const view = item.dataset.view;
+  if (!view) return;
+  
+  if (view === 'home') {
+    // 点首页 - 直接 toggle 第0层/第1层
+    const isOnHome = item.classList.contains('act');
+    if (isOnHome) {
+      // 已经在首页视图 → toggle layer
+      if (currentLayer === 0) switchToLayer1();
+      else switchToLayer0();
+    } else {
+      // 从其他页面切到首页 → 显示第0层
+      document.querySelectorAll('.sub-view').forEach(v => v.classList.remove('show'));
+      document.querySelectorAll('.si').forEach(s => s.classList.remove('act'));
+      item.classList.add('act');
+      document.getElementById('view-home').classList.add('show');
+      document.getElementById('page-title').textContent = '首页';
+      switchToLayer0();
+    }
+    return;
+  }
+  
+  document.querySelectorAll('.sub-view').forEach(v => v.classList.remove('show'));
+  document.querySelectorAll('.si').forEach(s => s.classList.remove('act'));
+  item.classList.add('act');
+  const titles = {approval:'审批中心',groups:'部门群组',query:'查询中心','im-settings':'IM 设置','oa-settings':'OA 设置'};
+  document.getElementById('page-title').textContent = titles[view] || '首页';
+  const viewMap = {approval:'view-approval',groups:'view-groups',query:'view-query','im-settings':'view-im-settings','oa-settings':'view-oa-settings'};
+  if (viewMap[view]) document.getElementById(viewMap[view]).classList.add('show');
+  if (view === 'approval') loadApprovals('pending');
+  if (view === 'groups') loadGroups();
+  if (view === 'im-settings') { loadIMSettings(); loadUserRoster(); }
+  if (view === 'oa-settings') loadOASettings();
+}
+
+// ===== 登录 & 权限 =====
+let currentUser = null;
+let currentPermissions = {im_admin: false, oa_admin: false, is_super_admin: false};
+
+// ---- 全局 fetch 包装：自动附加 Authorization header ----
+const _origFetch = window.fetch;
+window.fetch = function(url, options) {
+  options = options || {};
+  const token = localStorage.getItem('wb_token');
+  if (token) {
+    options.headers = Object.assign({}, options.headers || {});
+    options.headers['Authorization'] = 'Bearer ' + token;
+  }
+  return _origFetch(url, options);
+};
+
+function handleApiError(resp) {
+  // 401：token 过期 → 回到登录页
+  if (resp.status === 401) {
+    localStorage.removeItem('wb_token');
+    currentUser = null;
+    document.getElementById('view-login').style.display = 'flex';
+    document.getElementById('app-container').style.display = 'none';
+    showToast('登录已过期，请重新登录');
+    return true;
+  }
+  return false;
+}
+
+async function doLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!username) { showToast('请输入用户名'); return; }
+  try {
+    const resp = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({user_id: username, password: password})
+    });
+    if (resp.status === 401) { showToast('用户名或密码错误'); return; }
+    if (!resp.ok) { showToast('登录失败: ' + resp.status); return; }
+    const data = await resp.json();
+    currentUser = data.user;
+    localStorage.setItem('wb_token', data.token);
+    const permResp = await fetch('/api/auth/permissions?user_id=' + currentUser.id);
+    const perm = await permResp.json();
+    currentPermissions = perm.permissions;
+    showMainUI();
+  } catch(e) {
+    showToast('登录错误: ' + e.message);
+  }
+}
+
+function quickLogin(uid) {
+  document.getElementById('login-username').value = uid;
+  document.getElementById('login-password').value = 'demo123';
+  doLogin();
+}
+
+function showMainUI() {
+  // 隐藏登录视图
+  document.getElementById('view-login').style.display = 'none';
+  // 显示主容器
+  document.getElementById('app-container').style.display = 'flex';
+  // 根据权限显示管理入口
+  if (currentPermissions.im_admin || currentPermissions.oa_admin) {
+    document.getElementById('admin-sg').style.display = 'block';
+    document.getElementById('nav-im-settings').style.display = currentPermissions.im_admin ? 'flex' : 'none';
+    document.getElementById('nav-oa-settings').style.display = currentPermissions.oa_admin ? 'flex' : 'none';
+  }
+  // 更新顶部用户头像
+  const avEl = document.querySelector('.topbar .av');
+  if (avEl && currentUser) {
+    avEl.textContent = currentUser.name.charAt(0);
+    const roleName = currentUser.role === 'admin' ? '超管' : currentUser.role === 'im_admin' ? 'IM管理员' : currentUser.role === 'oa_admin' ? 'OA管理员' : '员工';
+    avEl.title = currentUser.name + ' (' + roleName + ')';
+  }
+  showToast('登录成功！欢迎 ' + currentUser.name);
+}
+
+function logout() {
+  fetch('/api/auth/logout', {method: 'POST'}).catch(() => {});
+  localStorage.removeItem('wb_token');
+  document.getElementById('view-login').style.display = 'flex';
+  document.getElementById('app-container').style.display = 'none';
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+  currentUser = null;
+}
+
+async function loadIMSettings() {
+  const list = document.getElementById('im-settings-list');
+  list.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">加载中...</div>';
+  try {
+    const resp = await fetch('/api/im/groups?user_id=' + currentUser.id);
+    const groups = await resp.json();
+    const adminGroups = groups.filter(g => g.role === 'owner' || g.role === 'admin');
+    list.innerHTML = (adminGroups.length ? adminGroups : groups).map(g => `
+      <div style="padding:14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">${g.name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">${g.description || '无描述'} · ${g.group_type}</div>
+        </div>
+        <span style="font-size:11px;padding:3px 8px;background:#e8f0ff;color:var(--primary);border-radius:4px">${g.role || '成员'}</span>
+      </div>
+    `).join('') || '<div style="color:var(--muted);padding:20px;text-align:center">暂无群组</div>';
+  } catch(e) {
+    list.innerHTML = '<div style="color:#c00;padding:20px">加载失败: ' + e.message + '</div>';
+  }
+}
+
+async function loadOASettings() {
+  const list = document.getElementById('oa-settings-list');
+  list.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">加载中...</div>';
+  try {
+    const resp = await fetch('/api/oa/defs');
+    const data = await resp.json();
+    const defs = data.items || data;
+    document.getElementById('oa-template-count').textContent = defs.length;
+    list.innerHTML = defs.map(d => `
+      <div style="padding:14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">${d.name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">分类: ${d.category} · ${d.steps ? d.steps.length : 0} 个审批节点</div>
+        </div>
+        <span style="font-size:11px;padding:3px 8px;background:#fff4e6;color:#c47a00;border-radius:4px">管理员操作</span>
+      </div>
+    `).join('') || '<div style="color:var(--muted);padding:20px;text-align:center">暂无模板</div>';
+  } catch(e) {
+    list.innerHTML = '<div style="color:#c00;padding:20px">加载失败: ' + e.message + '</div>';
+  }
+}
+
+function showCreateGroupPrompt() {
+  showToast('IM 管理员功能：可创建/管理群组');
+}
+
+// ====== 员工花名册导入/同步 ======
+
+async function loadUserRoster() {
+  const list = document.getElementById('user-roster-list');
+  list.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">加载中...</div>';
+  try {
+    const resp = await fetch('/api/users');
+    const data = await resp.json();
+    const users = data.items;
+    list.innerHTML = users.map(u => `
+      <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#2566e8,#0e8a6f);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px">${u.avatar || u.name.charAt(0)}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px">${u.name} <span style="color:var(--muted);font-size:11px;font-weight:400">${u.id}</span></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${u.department || '未填部门'} · ${roleName(u.role)}${u.is_active === false ? ' · <span style="color:#c00">离职</span>' : ''}</div>
+        </div>
+      </div>
+    `).join('') || '<div style="color:var(--muted);padding:20px;text-align:center">暂无用户</div>';
+  } catch(e) {
+    list.innerHTML = '<div style="color:#c00;padding:20px">加载失败: ' + e.message + '</div>';
+  }
+}
+
+function roleName(role) {
+  return ({admin:'超管',im_admin:'IM管理员',oa_admin:'OA管理员',manager:'部门经理',staff:'员工'})[role] || role;
+}
+
+async function handleUserImport(file) {
+  if (!file) return;
+  const result = document.getElementById('user-import-result');
+  result.innerHTML = '<div style="color:var(--muted)">上传中...</div>';
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const resp = await fetch('/api/users/import/preview', {method:'POST', body:fd});
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    result.innerHTML = renderImportPreview(data, 'user');
+  } catch(e) {
+    result.innerHTML = '<div style="color:#c00">预览失败: ' + e.message + '</div>';
+  }
+}
+
+function renderImportPreview(data, kind) {
+  const fm = data.field_mapping;
+  const missing = [];
+  if (kind === 'user' && (!fm.user_id || !fm.name)) {
+    missing.push('user_id / name');
+  } else if (kind === 'def' && (!fm.id || !fm.name)) {
+    missing.push('id / name');
+  }
+  let html = `
+    <div style="padding:14px;border:1px solid ${missing.length ? '#f5c6cb' : '#c3e6cb'};border-radius:6px;background:${missing.length ? '#f8d7da' : '#d4edda'};font-size:13px">
+      <div style="margin-bottom:8px;font-weight:600">📄 ${data.filename}</div>
+      <div style="color:#666;font-size:12px;line-height:1.7">
+        检测到 <b>${data.total_rows}</b> 行数据。识别字段映射：<br>
+        ${Object.entries(fm).map(([k,v]) => `<code style="background:#fff;padding:1px 6px;border-radius:3px;margin:2px">${k}</code> → <code style="background:#fff;padding:1px 6px;border-radius:3px;margin:2px">${v}</code>`).join('') || '<i>未识别到字段，请检查表头是否含 姓名/工号/部门 等</i>'}
+      </div>
+      ${missing.length ? '<div style="margin-top:8px;color:#c00">❌ 缺少必需字段：' + missing.join(', ') + '</div>' : '<div style="margin-top:8px;color:#155724">✅ 字段完整，可以提交</div>'}
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button onclick="commitImport(${JSON.stringify(data).replace(/"/g, '&quot;')}, '${kind}')" style="padding:6px 14px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;${missing.length ? 'opacity:.5;cursor:not-allowed' : ''}">✅ 确认导入</button>
+        <button onclick="this.parentElement.parentElement.innerHTML=''" style="padding:6px 14px;background:#fff;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px">取消</button>
+      </div>
+    </div>
+  `;
+  return html;
+}
+
+async function commitImport(data, kind) {
+  try {
+    const endpoint = kind === 'user' ? '/api/users/import/commit' : '/api/oa/defs/import/commit';
+    const resp = await fetch(endpoint + '?user_id=' + currentUser.id, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({rows: data.preview.length < data.total_rows ? null : data.preview, field_mapping: data.field_mapping}),
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const result = await resp.json();
+    showToast(`导入完成：新增 ${result.created||0}，跳过 ${result.skipped||0}，错误 ${result.errors||0}`);
+    if (kind === 'user') loadUserRoster();
+    else loadOASettings();
+  } catch(e) {
+    showToast('导入失败: ' + e.message);
+  }
+}
+
+function showHRSyncDialog() {
+  document.getElementById('hr-sync-modal').style.display = 'flex';
+  document.getElementById('hr-sync-json').value = '';
+  document.getElementById('hr-sync-preview').innerHTML = '';
+}
+
+async function commitHRSync() {
+  const text = document.getElementById('hr-sync-json').value.trim();
+  if (!text) { showToast('请输入 JSON 数据'); return; }
+  try {
+    const rows = JSON.parse(text);
+    if (!Array.isArray(rows)) throw new Error('必须是数组');
+    const resp = await fetch('/api/users/hr/sync?user_id=' + currentUser.id, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({rows, field_mapping: {user_id:'user_id', name:'name', department:'department', role:'role', manager_id:'manager_id'}}),
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    showToast(`同步完成：${data.synced} 人，${data.departed_marked_inactive} 人标记离职`);
+    document.getElementById('hr-sync-modal').style.display = 'none';
+    loadUserRoster();
+  } catch(e) {
+    showToast('同步失败: ' + e.message);
+  }
+}
+
+function downloadUserTemplate() {
+  const csv = 'user_id,name,email,department,role,manager_id\nzhangsan,张三,zhangsan@company.com,研发部,staff,\nlisi,李四,lisi@company.com,研发部,staff,zhangsan';
+  const blob = new Blob(['\ufeff' + csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = '员工花名册模板.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ====== OA 流程模板导入 ======
+
+async function handleDefImport(file) {
+  if (!file) return;
+  const result = document.getElementById('def-import-result');
+  result.innerHTML = '<div style="color:var(--muted)">上传中...</div>';
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const resp = await fetch('/api/oa/defs/import/preview', {method:'POST', body:fd});
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    result.innerHTML = renderImportPreview(data, 'def');
+  } catch(e) {
+    result.innerHTML = '<div style="color:#c00">预览失败: ' + e.message + '</div>';
+  }
+}
+
+function showOAScreenshotDialog() {
+  document.getElementById('oa-screenshot-modal').style.display = 'flex';
+  document.getElementById('oa-screenshot-result').innerHTML = '';
+}
+
+function showOATextDialog() {
+  document.getElementById('oa-text-modal').style.display = 'flex';
+  document.getElementById('oa-text-desc').value = '';
+  document.getElementById('oa-text-result').innerHTML = '';
+}
+
+async function analyzeScreenshot() {
+  const file = document.getElementById('oa-screenshot-file').files[0];
+  const hint = document.getElementById('oa-screenshot-hint').value;
+  if (!file) { showToast('请选择截图文件'); return; }
+  const result = document.getElementById('oa-screenshot-result');
+  result.innerHTML = '<div style="color:var(--muted)">🔍 AI 分析中...（本机未接 LLM，使用本地启发式提取）</div>';
+  // 由于本机未接视觉 LLM，走本地启发式：提示用户用文本描述创建
+  // 生产环境可对接 GPT-4V / Claude 3.5 Vision
+  setTimeout(() => {
+    result.innerHTML = `
+      <div style="padding:14px;border:1px solid #f0ad4e;border-radius:6px;background:#fff3cd;font-size:13px;line-height:1.6">
+        <div style="font-weight:600;margin-bottom:6px">⚠️ 当前使用本地启发式（未接视觉 LLM）</div>
+        <div>检测到截图：<b>${file.name}</b>（${(file.size/1024).toFixed(1)} KB）</div>
+        <div style="margin-top:8px;color:#666">生产环境建议对接 GPT-4V / Claude Vision：</div>
+        <pre style="background:#fff;padding:10px;border-radius:4px;font-size:11px;color:#333;margin-top:6px">POST /api/oa/defs/from-screenshot
+  form-data: image=&lt;file&gt;, hint="${hint}"
+  → 返回识别的 form_schema + steps JSON</pre>
+        <div style="margin-top:8px">👉 请改用 <a href="javascript:document.getElementById('oa-screenshot-modal').style.display='none';showOATextDialog()" style="color:var(--primary)">文本描述创建</a></div>
+      </div>
+    `;
+  }, 800);
+}
+
+async function analyzeTextDesc() {
+  const desc = document.getElementById('oa-text-desc').value.trim();
+  if (!desc) { showToast('请输入描述'); return; }
+  const result = document.getElementById('oa-text-result');
+  result.innerHTML = '<div style="color:var(--muted)">生成中...</div>';
+  // 本地启发式：解析 “表单需要xxx” 和 “审批依次是xxx” 或 “节点xxx”
+    const fieldMatch = desc.match(/(?:表单需要|表单含|字段)[：:]\s*([^。]+)/);
+    const stepMatch = desc.match(/(?:审批(?:依次|节点|顺序|流程)是|节点)[：:](.+?)(?:。|$)/) || desc.match(/审批[：:](.+?)。/);
+  let def = null;
+  if (fieldMatch && stepMatch) {
+    const fields = fieldMatch[1].split(/[、，,]/).map(s => s.trim()).filter(Boolean);
+    const stepNames = stepMatch[1].split(/[→\->]+|、/).map(s => s.trim()).filter(Boolean);
+    const steps = stepNames.map((name, i) => ({id:'step_'+(i+1), name, assignee_type:'initiator_choice'}));
+    const form_schema = {type:'object', properties:{}, required:[]};
+    fields.forEach(f => { form_schema.properties[f] = {type:'string'}; form_schema.required.push(f); });
+    def = {id:'text_'+Date.now(), name:desc.slice(0,12)+(desc.length>12?'...':''), icon:'📋', category:'admin', description:desc, form_schema, steps};
+  }
+  if (def) {
+    result.innerHTML = `
+      <div style="padding:14px;border:1px solid #c3e6cb;border-radius:6px;background:#d4edda;font-size:13px">
+        <div style="font-weight:600;margin-bottom:8px">✅ 已生成模板预览</div>
+        <div><b>名称：</b>${def.name}</div>
+        <div><b>表单字段：</b>${Object.keys(def.form_schema.properties).join(', ')}</div>
+        <div><b>审批节点：</b>${def.steps.map(s=>s.name).join(' → ')}</div>
+        <div style="margin-top:10px"><button onclick="commitTextDef()" style="padding:6px 14px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer">✅ 确认创建</button></div>
+      </div>
+    `;
+    window._pendingDef = def;
+  } else {
+    result.innerHTML = '<div style="padding:14px;border:1px solid #f5c6cb;border-radius:6px;background:#f8d7da;font-size:13px;color:#c00">未能识别。请按示例格式描述（表单需要…、审批是…）。</div>';
+  }
+}
+
+async function commitTextDef() {
+  const def = window._pendingDef;
+  if (!def) return;
+  try {
+    const resp = await fetch('/api/oa/defs/import/commit?user_id=' + currentUser.id, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        rows: [{id:def.id, name:def.name, category:def.category, icon:def.icon, description:def.description, steps: def.steps.map(s=>s.name).join(';'), form_fields: Object.keys(def.form_schema.properties).join(',')}],
+        field_mapping: {id:'id', name:'name', category:'category', icon:'icon', description:'description', steps:'steps', form_fields:'form_fields'},
+        default_assignee: 'initiator_choice',
+      }),
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const r = await resp.json();
+    showToast(`创建完成：${r.created} 个新模板`);
+    document.getElementById('oa-text-modal').style.display = 'none';
+    loadOASettings();
+  } catch(e) {
+    showToast('创建失败: ' + e.message);
+  }
+}
+
+async function exportOADefs() {
+  const resp = await fetch('/api/oa/defs-export');
+  if (!resp.ok) { showToast('导出失败'); return; }
+  const blob = await resp.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'oa_defs.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// News Carousel
+let newsAutoClose = true;
+
+function showNews(manual) {
+  manual = manual || false;
+  newsAutoClose = !manual; // Manual open = no auto close
+  
+  const overlay = document.getElementById('news-overlay');
+  const body = document.getElementById('news-body');
+  const dots = document.getElementById('news-dots');
+  const timerText = document.getElementById('news-timer-text');
+  
+  body.innerHTML = NEWS.map((n, i) => `
+    <div class="news-item ${i === 0 ? 'active' : ''}" data-index="${i}">
+      <span class="tag" style="background:#e8f0ff;color:var(--primary)">${n.tag}</span>
+      <h2>${n.title}</h2>
+      <p>${n.source} · ${n.date}</p>
+    </div>
+  `).join('');
+  dots.innerHTML = NEWS.map((_, i) => `<div class="news-dot ${i === 0 ? 'active' : ''}" onclick="goToNews(${i})"></div>`).join('');
+  
+  // Update timer text
+  if (timerText) {
+    timerText.textContent = newsAutoClose ? '5s 后自动关闭' : '手动关闭';
+  }
+  
+  overlay.classList.add('show');
+  newsMinimized = false;
+  startNewsRotation();
+}
+
+function goToNews(index) {
+  newsIndex = index;
+  document.querySelectorAll('.news-item').forEach((el, i) => el.classList.toggle('active', i === index));
+  document.querySelectorAll('.news-dot').forEach((el, i) => el.classList.toggle('active', i === index));
+  resetNewsCountdown();
+}
+
+function nextNews() {
+  newsIndex = (newsIndex + 1) % NEWS.length;
+  goToNews(newsIndex);
+}
+
+function startNewsRotation() {
+  stopNewsRotation();
+  newsCountdown = 5;
+  updateNewsTimer();
+  newsTimer = setInterval(nextNews, 3000);
+  
+  if (newsAutoClose) {
+    newsCountdownTimer = setInterval(() => {
+      newsCountdown--;
+      updateNewsTimer();
+      if (newsCountdown <= 0) closeNews();
+    }, 1000);
+  }
+}
+
+function stopNewsRotation() {
+  if (newsTimer) clearInterval(newsTimer);
+  if (newsCountdownTimer) clearInterval(newsCountdownTimer);
+}
+
+function resetNewsCountdown() {
+  newsCountdown = 10;
+  updateNewsTimer();
+}
+
+function updateNewsTimer() {
+  const el = document.getElementById('news-timer');
+  if (el) el.textContent = Math.max(0, newsCountdown);
+}
+
+function closeNews() {
+  stopNewsRotation();
+  document.getElementById('news-overlay').classList.remove('show');
+  newsMinimized = false;
+  newsAutoClose = true; // Reset for next time
+}
+
+
+
+// Dashboard（单次请求：portal + 审批列表 + 日程 + 记忆统计）
+async function loadDashboard() {
+  try {
+    const r = await fetch(API + '/api/dashboard?user_id=' + USER);
+    const d = await r.json();
+    const greet = document.querySelector('.greet');
+    if (greet) {
+      greet.innerHTML = `<div><b>王主任，${d.greeting}</b> 待办 <span class="hl">${d.pending_todos||0}</span> 条 · 审批 <span class="hl">${d.pending_approvals||0}</span> 条</div><div>📅 ${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'})}</div>`;
+    }
+    const badge = document.getElementById('approval-badge');
+    if (badge) badge.textContent = d.pending_approvals || 0;
+    const todoCount = document.getElementById('todo-count');
+    if (todoCount) todoCount.textContent = d.pending_todos || 0;
+    const approvalCount = document.getElementById('approval-count');
+    if (approvalCount) approvalCount.textContent = d.pending_approvals || 0;
+    // 待审批列表（来自 dashboard 直接返回，无需额外请求）
+    const list = document.getElementById('home-approval-list');
+    if (list && d.pending_list) {
+      const items = d.pending_list;
+      if (!items.length) {
+        list.innerHTML = '<div class="approval-item"><div style="color:var(--muted);padding:20px;text-align:center">暂无待审批</div></div>';
+      } else {
+        list.innerHTML = items.slice(0, 3).map(item => `
+          <div class="approval-item" onclick="switchView(document.querySelector('[data-view=approval]'))">
+            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+              <span class="tag pending">${item.status === 'pending' ? '待审批' : item.status}</span>
+              <span class="t">${item.title || item.summary || '审批单'}</span>
+            </div>
+            <span style="font-size:10px;color:var(--muted)">${item.created_at || ''}</span>
+          </div>
+        `).join('');
+      }
+    }
+    // 日程
+    const sch = document.querySelector('.sch-list');
+    if (sch && d.schedule) {
+      sch.innerHTML = d.schedule.map(s => `<div class="sch-row"><div><div class="tm">${s.time}</div></div><div><div class="ev">${s.title}</div><div class="em">📍 ${s.room}</div></div></div>`).join('');
+    }
+  } catch(e) { console.error(e); }
+}
+
+// Schedule
+async function loadSchedule() {
+  const el = document.getElementById('home-schedule');
+  if (!el) return;
+  try {
+    const r = await fetch(API + '/api/dashboard?user_id=' + USER);
+    const d = await r.json();
+    if (d.schedule && d.schedule.length) {
+      el.innerHTML = d.schedule.map(s => `
+        <div class="sch-row">
+          <div><div class="tm">${s.time}</div></div>
+          <div><div class="ev">${s.title}</div><div class="em">📍 ${s.room}</div></div>
+        </div>
+      `).join('');
+    }
+  } catch(e) { console.error(e); }
+}
+
+// Home News Carousel
+let homeNewsIndex = 0;
+let homeNewsTimer = null;
+
+function updateHomeNewsCarousel() {
+  const container = document.getElementById('home-news-carousel');
+  const dots = document.getElementById('home-news-dots');
+  if (!container || !NEWS.length) return;
+
+  const n = NEWS[homeNewsIndex];
+  container.innerHTML = `
+    <div style="position:absolute;inset:0;background:linear-gradient(135deg,#2566e8,#0e8a6f);display:flex;align-items:center;padding:24px 32px;color:#fff">
+      <div style="flex:1">
+        <span style="display:inline-block;padding:3px 10px;background:rgba(255,255,255,.2);border-radius:3px;font-size:10px;font-weight:600;margin-bottom:12px">${n.tag}</span>
+        <h3 style="font-size:18px;font-weight:600;line-height:1.4;margin-bottom:8px">${n.title}</h3>
+        <div style="font-size:11px;opacity:.8">${n.source} · ${n.date}</div>
+      </div>
+      <div style="font-size:40px;opacity:.3">📰</div>
+    </div>
+  `;
+
+  if (dots) {
+    dots.innerHTML = NEWS.map((_, i) => `<div style="width:${i === homeNewsIndex ? '20px' : '8px'};height:8px;border-radius:${i === homeNewsIndex ? '4px' : '50%'};background:${i === homeNewsIndex ? '#fff' : 'rgba(255,255,255,.4)'};cursor:pointer;transition:all .3s" onclick="event.stopPropagation();setHomeNews(${i})"></div>`).join('');
+  }
+  updateHeroTitle();
+}
+
+function setHomeNews(index) {
+  homeNewsIndex = index;
+  updateHomeNewsCarousel();
+  resetHomeNewsRotation();
+}
+
+function nextHomeNews() {
+  homeNewsIndex = (homeNewsIndex + 1) % NEWS.length;
+  updateHomeNewsCarousel();
+}
+
+// Update hero title and dot in ZhiYuan view
+// 拖动分隔条调整输入区高度
+(function() {
+  const divider = document.getElementById('chat-divider');
+  const inputArea = document.getElementById('home-chat-input-area');
+  let isDragging = false;
+  let startY = 0;
+  let startHeight = 0;
+
+  if (!divider || !inputArea) return;
+
+  divider.addEventListener('mousedown', function(e) {
+    isDragging = true;
+    startY = e.clientY;
+    startHeight = inputArea.offsetHeight;
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    const containerHeight = inputArea.parentElement.offsetHeight;
+    const delta = startY - e.clientY;
+    let newHeight = startHeight + delta;
+    // 限制在 15% ~ 60% 之间
+    const minH = Math.max(100, containerHeight * 0.15);
+    const maxH = containerHeight * 0.60;
+    newHeight = Math.max(minH, Math.min(maxH, newHeight));
+    inputArea.style.height = newHeight + 'px';
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (isDragging) {
+      isDragging = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+  });
+})();
+
+function updateHeroTitle() {
+  const n = NEWS[homeNewsIndex];
+  const titleEl = document.getElementById('home-hero-title');
+  const metaEl = document.getElementById('home-hero-meta');
+  if (titleEl) titleEl.textContent = n.title;
+  if (metaEl) metaEl.textContent = n.date + ' · ' + n.source;
+  const dots = document.querySelectorAll('#home-hero-dots .dot');
+  dots.forEach((d, i) => d.classList.toggle('act', i === homeNewsIndex));
+}
+
+function startHomeNewsRotation() {
+  stopHomeNewsRotation();
+  homeNewsTimer = setInterval(nextHomeNews, 4000);
+}
+
+function stopHomeNewsRotation() {
+  if (homeNewsTimer) clearInterval(homeNewsTimer);
+}
+
+function resetHomeNewsRotation() {
+  stopHomeNewsRotation();
+  startHomeNewsRotation();
+}
+
+// ============================================================
+// OA 审批中心
+// ============================================================
+async function loadApprovals(tab) {
+  tab = tab || 'pending';
+  const list = document.getElementById('approval-list');
+  if (!list) return;
+  list.innerHTML = '<div style="padding:14px;text-align:center;color:var(--muted)">加载中...</div>';
+  try {
+    const r = await fetch(API + '/api/oa/' + tab + '?user_id=' + USER);
+    const d = await r.json();
+    const items = d.items || [];
+    if (!items.length) {
+      list.innerHTML = '<div style="padding:14px;text-align:center;color:var(--muted)">暂无数据</div>';
+      return;
+    }
+    list.innerHTML = items.map(item => {
+      const statusColors = {draft:'#8590a0',pending:'#2566e8',approved:'#065f46',rejected:'#dc2626',withdrawn:'#8590a0',completed:'#0e8a6f',archived:'#8590a0'};
+      const statusLabel = item.status_label || item.status;
+      return `<div class="approval-item" style="padding:12px 14px;border-bottom:1px solid #f0f2f5;cursor:pointer" onclick="showApprovalDetail('${item.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:18px">${item.icon||'📋'}</span>
+            <span style="font-weight:600;font-size:13px">${item.title}</span>
+          </div>
+          <span style="font-size:10px;padding:2px 8px;border-radius:3px;background:${statusColors[item.status]||'#ccc'}20;color:${statusColors[item.status]||'#ccc'};font-weight:600">${statusLabel}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${item.summary || item.category_name || ''}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:10px;color:var(--muted)">发起人: ${item.initiator} · ${item.created_at}</span>
+          ${item.status==='pending' ? `<button class="btn p" onclick="event.stopPropagation();handleApproval('${item.id}','approve')" style="font-size:10px;padding:3px 10px">同意</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div style="padding:14px;text-align:center;color:var(--danger)">加载失败: ' + e.message + '</div>';
+  }
+}
+
+async function handleApproval(instId, action) {
+  const comment = prompt(action === 'approve' ? '同意意见（可选）:' : '退回原因:');
+  if (comment === null) return;
+  try {
+    const r = await fetch(API + '/api/oa/' + action + '/' + instId + '?user_id=' + USER, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action: action, comment: comment || (action==='approve'?'同意':'退回')})
+    });
+    const d = await r.json();
+    if (d.status === 'ok') {
+      showToast('处理成功');
+      loadApprovals('pending');
+    } else {
+      showToast('操作失败');
+    }
+  } catch(e) {
+    showToast('网络错误');
+  }
+}
+
+function showApprovalDetail(instId) {
+  window.open(API + '/api/oa/track/' + instId, '_blank');
+}
+
+function initApprovalTabs() {
+  document.querySelectorAll('#view-approval .tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#view-approval .tab').forEach(t => t.classList.remove('act'));
+      tab.classList.add('act');
+      const map = {'待审批':'pending','我发起':'started','已办':'history','草稿':'drafts'};
+      loadApprovals(map[tab.textContent] || 'pending');
+    });
+  });
+}
+
+// ============================================================
+// IM 内部通信
+// ============================================================
+async function loadGroups() {
+  const list = document.getElementById('group-list');
+  if (!list) return;
+  try {
+    const r = await fetch(API + '/api/im/groups?user_id=' + USER);
+    const d = await r.json();
+    const items = Array.isArray(d) ? d : (d.items || []);
+    if (!items.length) {
+      list.innerHTML = '<div style="padding:14px;text-align:center;color:var(--muted)">暂无群组</div>';
+      return;
+    }
+    list.innerHTML = items.map(g => {
+      const unreadBadge = g.unread_count ? `<span class="badge">${g.unread_count}</span>` : '';
+      return `<div class="item ${currentGroupId===g.group_id?'act':''}" onclick="selectGroup('${g.group_id}','${escapeHtml(g.name)}')" style="padding:10px 14px;border-bottom:1px solid #f0f2f5;cursor:pointer">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">${g.icon||'💬'}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:500;font-size:13px">${g.name}</div>
+            <div style="font-size:10px;color:var(--muted)">${g.role === 'owner' ? '群主' : '成员'} · ${g.group_type}</div>
+          </div>
+          ${unreadBadge}
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div style="padding:14px;color:var(--danger)">加载失败</div>';
+  }
+}
+
+async function selectGroup(groupId, groupName) {
+  currentGroupId = groupId;
+  document.getElementById('chat-header').querySelector('.ct').textContent = '💬 ' + groupName;
+  document.getElementById('chat-input-row').style.display = '';
+  await loadMessages(groupId);
+  loadGroups();
+}
+
+async function loadMessages(groupId, limit) {
+  limit = limit || 50;
+  const container = document.getElementById('chat-messages');
+  container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px">加载中...</div>';
+  try {
+    const r = await fetch(API + '/api/im/groups/' + groupId + '/messages?limit=' + limit + '&user_id=' + USER);
+    const d = await r.json();
+    const msgs = Array.isArray(d) ? d : (d.items || []);
+    if (!msgs.length) {
+      container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px 0">暂无消息，说点什么吧 👋</div>';
+      return;
+    }
+    const nameMap = {'zhangsan':'张三','lisi':'李四','wangwu':'王五','default':'我'};
+    container.innerHTML = msgs.map(m => {
+      const isSelf = m.sender_id === USER;
+      const name = nameMap[m.sender_id] || m.sender_id;
+      return `<div style="display:flex;flex-direction:${isSelf?'row-reverse':'row'};align-items:flex-start;gap:8px;max-width:80%">
+        <div style="width:32px;height:32px;border-radius:50%;background:${isSelf?'linear-gradient(135deg,#2566e8,#0e8a6f)':'#e8f0ff'};color:${isSelf?'#fff':'#2566e8'};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0">${name[0]}</div>
+        <div style="background:${isSelf?'linear-gradient(135deg,#2566e8,#0e8a6f)':'#f5f6f8'};color:${isSelf?'#fff':'#1a2332'};padding:8px 12px;border-radius:10px;font-size:13px;line-height:1.5;word-break:break-word">
+          <div style="font-size:10px;color:${isSelf?'rgba(255,255,255,.7)':'var(--muted)'};margin-bottom:2px">${name}</div>
+          ${escapeHtml(m.content)}
+        </div>
+      </div>`;
+    }).join('');
+    container.scrollTop = container.scrollHeight;
+  } catch(e) {
+    container.innerHTML = '<div style="text-align:center;color:var(--danger);padding:20px">加载失败</div>';
+  }
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg || !currentGroupId) return;
+  input.value = '';
+  input.disabled = true;
+  try {
+    const r = await fetch(API + '/api/im/groups/' + currentGroupId + '/messages?user_id=' + USER, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({sender_id: USER, content: msg})
+    });
+    const d = await r.json();
+    if (d.id) {
+      await loadMessages(currentGroupId);
+    } else {
+      showToast('发送失败');
+    }
+  } catch(e) {
+    showToast('网络错误');
+  }
+  input.disabled = false;
+  input.focus();
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); }
+}
+
+function createGroupPrompt() {
+  const name = prompt('群组名称:');
+  if (!name) return;
+  fetch(API + '/api/im/groups?user_id=' + USER, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({name: name})
+  }).then(r => r.json()).then(d => {
+    if (d.id) {
+      showToast('群组已创建');
+      loadGroups();
+    } else {
+      showToast('创建失败');
+    }
+  });
+}
+
+// ============================================================
+// AI Chat Panel
+// ============================================================
+// ===== AI 首页聊天（调度器模式）=====
+
+// 意图识别：识别后直调 OA/IM/用户 API，不走 LLM（带 LLM 路由已留给普通聊天）
+function detectIntent(msg) {
+  const m = msg.trim();
+  // 发审批
+  let qj = m.match(/(?:我要|发起|发一个|请个)?\s*(.+?)(?:审批|请假|报销|出差|用印|采购|合同|加班|转正|离职|调岗)/);
+  if (qj && (m.includes('发起') || m.includes('请') || m.includes('要'))) {
+    return {type:'oa_start', keyword: qj[2] || qj[1]};
+  }
+  // 发消息
+  let send = m.match(/(?:给|发|问|跟|向)(.+?)(?:发条?|发个|说句|说一|说|发)/);
+  if (send && (m.includes('消息') || m.includes('说') || m.includes('发'))) {
+    return {type:'im_send', target: send[1].trim()};
+  }
+  // 查询员工/部门
+  if (/(?:谁|有哪些|都有谁|列出|查一下|看看).*(?:员工|同事|部门|谁)/.test(m)) return {type:'user_query'};
+  // 提醒
+  if (/(?:提醒|催|通知).*(?:审批|办事|提交)/.test(m)) return {type:'oa_remind'};
+  return null;
+}
+
+async function handleIntent(intent, msg, container) {
+  const div = document.createElement('div');
+  div.style.cssText = 'align-self:flex-start;background:#f0f7ff;color:var(--primary);padding:10px 14px;border-radius:10px;max-width:85%;font-size:13px;line-height:1.6;word-break:break-word';
+  div.innerHTML = '<span class="typing">⚡ 调度中...</span>';
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  try {
+    if (intent.type === 'oa_start') {
+      // 用缓存拉取 defs（5 分钟内不重复请求）
+      const now = Date.now();
+      if (!defsCache || (now - defsCacheTime) > DEFS_CACHE_TTL) {
+        const defsResp = await fetch('/api/oa/defs');
+        const defsData = await defsResp.json();
+        defsCache = Array.isArray(defsData) ? defsData : defsData.items || defsData.defs || [];
+        defsCacheTime = now;
+      }
+      const defs = defsCache;
+      const matched = defs.find(d => msg.includes(d.name) || (d.id && msg.includes(d.id)));
+      if (!matched) {
+        div.innerHTML = '可发起的审批类型：<br>' + defs.map(d => '· ' + d.name).join('<br>') + '<br><small style="color:#666">试试说：<i>“发起请假审批”</i></small>';
+        return;
+      }
+      // 抽取表单字段（零 token 规则抽取）
+      const form = extractFormFields(msg, matched.id);
+      const days = parseFloat(form['天数']) || 0;
+
+      // 请假类模板：先调 precheck 智能核算假期余额
+      if (matched.id === 'leave_approval' && days > 0) {
+        const precheckResp = await fetch('/api/oa/precheck', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({user_id: currentUser.id, def_id: matched.id, form_data: form})
+        });
+        const precheck = await precheckResp.json();
+        if (!precheck.pass) {
+          div.innerHTML = `❌ <b>余额不足</b><br><small style="color:#666">${precheck.reason}</small>`;
+          return;
+        }
+        // 有建议时展示给用户
+        if (precheck.suggestions && precheck.suggestions.length > 1) {
+          const sugHtml = precheck.suggestions.slice(0, 3).map(s =>
+            `· <b>${s.combo}</b>（剩余：年假${s.remaining_after.annual_leave}天/育儿假${s.remaining_after.parental_leave}天/事假${s.remaining_after.personal_leave}天）`
+          ).join('<br>');
+          div.innerHTML = `⚠️ 请假 <b>${days} 天</b>，AI 建议：<br>${sugHtml}<br><small style="color:#666">已选「${precheck.recommended}」，确认发起？</small>`;
+          return;
+        }
+      }
+
+      // 发起审批（precheck 通过或无 precheck 的模板）
+      const startResp = await fetch(`/api/oa/start?user_id=${currentUser.id}`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({def_id: matched.id, form_data: form, title: msg, initiator: currentUser.id})});
+      if (!startResp.ok) throw new Error('创建实例失败 HTTP ' + startResp.status);
+      const inst = await startResp.json();
+      const instId = inst.instance_id || inst.id;
+      const submitResp = await fetch(`/api/oa/submit/${instId}?user_id=${currentUser.id}`, {method:'POST'});
+      const submitResult = await submitResp.json();
+      // 展示填好的字段（友好反馈）
+      const filledFields = Object.keys(form).filter(k => form[k] && form[k] !== '（未填写）');
+      const fieldsHtml = filledFields.length
+        ? '<br><small style="color:#666">已自动填表：' + filledFields.map(k => `${k}=${form[k]}`).join('， ') + '</small>'
+        : '';
+      const statusLabel = {'pending':'待审批','draft':'草稿','completed':'已完成','rejected':'已退回','withdrawn':'已撤回'}[submitResult.statusCode] || submitResult.statusCode;
+      div.innerHTML = `✅ <b>${matched.name}</b> 已发起！<br>
+        <small style="color:#666">实例 ID：${instId}<br>
+        状态：${statusLabel}</small>${fieldsHtml}
+        <br><a href="javascript:switchViewByName('审批中心')" style="color:var(--primary);font-size:12px">去审批中心查看 →</a>`;
+      // 在聊天框里渲染审批卡片（审批人可直接操作）
+      await renderApprovalCard(container, instId, form, matched.name, currentUser.id);
+    } else if (intent.type === 'im_send') {
+      const target = intent.target;
+      const groupsResp = await fetch(`/api/im/groups?user_id=${currentUser.id}`);
+      const groups = await groupsResp.json();
+      if (!groups.length) { div.innerHTML = '你还没有任何群组，先加一个吧。'; return; }
+      const group = groups.find(g => g.name.includes(target)) || groups[0];
+      const sendResp = await fetch(`/api/im/groups/${group.group_id}/messages`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({sender_id: currentUser.id, content: msg})});
+      if (!sendResp.ok) throw new Error('发送失败 HTTP ' + sendResp.status);
+      const sent = await sendResp.json();
+      div.innerHTML = `✉️ 已发到 <b>${group.name}</b><br><small style="color:#666">${(sent.content||'').slice(0,60)}</small><br><a href="javascript:switchViewByName('部门群组')" style="color:var(--primary);font-size:12px">去部门群组查看 →</a>`;
+    } else if (intent.type === 'user_query') {
+      const resp = await fetch('/api/users');
+      const data = await resp.json();
+      div.innerHTML = `📊 当前系统共 <b>${data.total}</b> 名员工<br><small style="color:#666">${data.items.map(u=>u.name+'（'+(u.department||'')+'）').join('、')}</small>`;
+    } else if (intent.type === 'oa_remind') {
+      div.innerHTML = `🔔 已记录提醒请求。\n<small style="color:#666">后台将扫描超过 24h 未审批的实例并通知。</small>`;
+    }
+  } catch(e) {
+    div.innerHTML = '<span style="color:#c00">调度失败: ' + e.message + '</span>';
+  }
+}
+
+// ============================================================
+// 审批卡片（在 IM / 聊天中内联展示 OA 审批）
+// ============================================================
+async function renderApprovalCard(container, instId, form, defName, user_id) {
+  const card = document.createElement('div');
+  card.style.cssText = 'align-self:flex-start;background:#fff;border:1px solid #e0e0e0;border-left:3px solid var(--primary);border-radius:8px;padding:12px 14px;max-width:85%;font-size:13px;line-height:1.6;box-shadow:0 1px 3px rgba(0,0,0,0.08)';
+  const fields = Object.entries(form).filter(([,v]) => v && v !== '（未填写）').map(([k,v]) => `<div style="display:flex;justify-content:space-between;gap:16px"><span style="color:#666">${k}</span><span style="font-weight:500">${v}</span></div>`).join('');
+  card.innerHTML = `
+    <div style="font-weight:600;color:var(--primary);margin-bottom:6px">📋 ${defName}</div>
+    <div style="background:#f8f9fa;border-radius:6px;padding:8px 10px;margin-bottom:8px">${fields || '<span style="color:#999">暂无字段</span>'}</div>
+    <div id="card-status-${instId}" style="font-size:12px;color:#666;margin-bottom:6px">⏳ 待审批</div>
+    <div id="card-actions-${instId}" style="display:flex;gap:8px">
+      <button onclick="approveCard('${instId}', '${user_id}')" style="padding:4px 12px;background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:4px;cursor:pointer;font-size:12px">✅ 同意</button>
+      <button onclick="rejectCard('${instId}', '${user_id}')" style="padding:4px 12px;background:#ffebee;color:#c62828;border:1px solid #ffcdd2;border-radius:4px;cursor:pointer;font-size:12px">❌ 退回</button>
+    </div>
+  `;
+  container.appendChild(card);
+  container.scrollTop = container.scrollHeight;
+}
+
+// 审批操作后直接通知发起人（从卡片 data 属性读发起人，无需额外 API）
+async function notifyInitiator(instId, fromUserId, action) {
+  try {
+    // 从卡片 DOM 读出发起人（renderApprovalCard 时已存入 data 属性）
+    const card = document.querySelector(`div[data-inst-id="${instId}"]`);
+    const initiator = card?.dataset?.initiator;
+    if (!initiator || initiator === fromUserId) return; // 不需要通知自己
+    
+    // 查找或创建与发起人的 DM 群组
+    const dmGroup = await findOrCreateDM(initiator);
+    if (!dmGroup) return;
+    
+    const actionText = action === 'approve' ? '✅ 已同意' : '❌ 已退回';
+    const msg = `${actionText} 您的审批单 ${instId} 已被处理，当前状态：${action === 'approve' ? '待下一节点' : '已退回'}`;
+    
+    await fetch(`/api/im/groups/${dmGroup.group_id}/messages`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({sender_id: fromUserId, content: msg})
+    });
+  } catch(e) { console.warn('通知发起人失败:', e); }
+}
+
+// 查找或创建 DM 群组（两人私聊）
+async function findOrCreateDM(targetUserId) {
+  const resp = await fetch(`/api/im/groups?user_id=${USER}`);
+  const groups = await resp.json();
+  // 查找已有的 DM 群组（group_type 包含 'dm'）
+  let dm = groups.find(g => g.group_type === 'dm' && g.members?.includes(targetUserId));
+  if (!dm) {
+    // 创建新 DM
+    const createResp = await fetch('/api/im/groups', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name: targetUserId, group_type: 'dm', created_by: USER})
+    });
+    dm = await createResp.json();
+    // 添加对方为成员
+    if (dm?.group_id) {
+      await fetch(`/api/im/groups/${dm.group_id}/members`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({user_id: targetUserId})
+      });
+    }
+  }
+  return dm;
+}
+
+async function approveCard(instId, user_id) {
+  const statusEl = document.getElementById('card-status-' + instId);
+  const actionsEl = document.getElementById('card-actions-' + instId);
+  if (actionsEl) actionsEl.innerHTML = '<span style="color:#666">⏳ 处理中...</span>';
+  try {
+    const resp = await fetch(`/api/oa/approve/${instId}?user_id=${user_id}`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'approve', comment:'同意'})});
+    const result = await resp.json();
+    const statusMap = {'pending':'⏳ 待审批','completed':'✅ <b>已通过</b>（流程完成）','rejected':'❌ 已退回','withdrawn':'🚫 已撤回'};
+    if (statusEl) {
+      const label = statusMap[result.statusCode] || result.statusCode || '已处理';
+      statusEl.innerHTML = label;
+    }
+    if (actionsEl) actionsEl.innerHTML = '<span style="color:#2e7d32;font-size:12px">✅ 操作成功</span>';
+  } catch(e) {
+    if (statusEl) statusEl.innerHTML = '<span style="color:#c00">❌ 操作失败: ' + e.message + '</span>';
+    if (actionsEl) actionsEl.innerHTML = '<button onclick="approveCard(\'' + instId + '\', \'' + user_id + '\')" style="padding:4px 12px">重试</button>';
+  }
+}
+
+async function rejectCard(instId, user_id) {
+  const comment = prompt('退回原因：');
+  if (comment === null) return;
+  const statusEl = document.getElementById('card-status-' + instId);
+  const actionsEl = document.getElementById('card-actions-' + instId);
+  if (actionsEl) actionsEl.innerHTML = '<span style="color:#666">⏳ 处理中...</span>';
+  try {
+    const resp = await fetch(`/api/oa/approve/${instId}?user_id=${user_id}`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'reject', comment: comment || '退回'})});
+    const result = await resp.json();
+    if (statusEl) statusEl.innerHTML = '❌ <b>已退回</b>';
+    if (actionsEl) actionsEl.innerHTML = '<span style="color:#c62828;font-size:12px">已退回</span>';
+  } catch(e) {
+    if (statusEl) statusEl.innerHTML = '<span style="color:#c00">❌ 操作失败: ' + e.message + '</span>';
+  }
+}
+
+// ============================================================
+// 表单字段抽取（纯规则，零 token）
+// 支持请假/报销/出差等模板的中文 key 自动抽取
+// ============================================================
+function extractFormFields(msg, defId) {
+  const m = msg;
+  const out = {};
+  const today = new Date();
+  const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+  if (defId === 'leave_approval') {
+    // 请假类型
+    const types = ['年假', '事假', '病假', '婚假', '产假', '陪产假', '丧假', '调休'];
+    for (const t of types) { if (m.includes(t)) { out['请假类型'] = t; break; } }
+    if (!out['请假类型']) {
+      if (/体检|不舒服|发烧|感冒|看病|医院/.test(m)) out['请假类型'] = '病假';
+      else if (/结婚|婚礼|订婚/.test(m)) out['请假类型'] = '婚假';
+      else if (/产|陪产/.test(m)) out['请假类型'] = '陪产假';
+      else if (/家人|亲属|去世|丧/.test(m)) out['请假类型'] = '丧假';
+      else if (/私事|有事|处理/.test(m)) out['请假类型'] = '事假';
+      else out['请假类型'] = '年假';
+    }
+    // 天数
+    const dayMatch = m.match(/(\d+(?:\.\d+)?)\s*天/);
+    if (dayMatch) out['天数'] = parseFloat(dayMatch[1]);
+    else if (/半天|上午|下午|半天假/.test(m)) out['天数'] = 0.5;
+    // 统一扫描：先抽带年份的(可能多个), 再补无前缀短日期(只补未被覆盖的位置)
+    const allDates = [];
+    const fullRe = /(20\d{2})[-年](\d{1,2})[-月](\d{1,2})日?/g;
+    let _m;
+    while ((_m = fullRe.exec(m)) !== null) {
+      allDates.push({str: `${_m[1]}-${String(_m[2]).padStart(2,'0')}-${String(_m[3]).padStart(2,'0')}`, idx: _m.index});
+    }
+    if (allDates.length < 2) {
+      const shortRe = /(\d{1,2})月(\d{1,2})日/g;
+      let _s;
+      while ((_s = shortRe.exec(m)) !== null && allDates.length < 2) {
+        // 跳过已被 fullRe 覆盖的(索引接近)
+        const covered = allDates.some(d => Math.abs(d.idx - _s.index) < 6);
+        if (covered) continue;
+        allDates.push({str: `${today.getFullYear()}-${String(_s[1]).padStart(2,'0')}-${String(_s[2]).padStart(2,'0')}`, idx: _s.index});
+      }
+    }
+    const datesStr = allDates.map(d => d.str);
+    const halfDay = out['天数'] === 0.5;
+    if (datesStr.length >= 2) { out['开始日期'] = datesStr[0]; out['结束日期'] = datesStr[1]; }
+    else if (datesStr.length === 1) {
+      out['开始日期'] = datesStr[0];
+      if (!halfDay) { const d = new Date(datesStr[0]); d.setDate(d.getDate() + (out['天数'] || 1) - 1); out['结束日期'] = fmt(d); }
+      else { out['结束日期'] = datesStr[0]; }
+    } else {
+      // 相对日期
+      const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+      out['开始日期'] = fmt(tomorrow);
+      if (!halfDay) { const end = new Date(tomorrow); end.setDate(tomorrow.getDate() + (out['天数'] || 1) - 1); out['结束日期'] = fmt(end); }
+      else { out['结束日期'] = fmt(tomorrow); }
+    }
+    // 事由：去掉已抽取的内容当剩余文本
+    let reason = m
+      .replace(/(?:我要|想|需要|要|请|帮我|能不能|麻烦)/g, '')
+      .replace(/(?:发起|发一个|请个)?\s*/g, '')
+      .replace(/(?:请假|审批|年假|事假|病假|婚假|产假|陪产假|丧假|调休)/g, '')
+      .replace(/年假|事假|病假|婚假|产假|陪产假|丧假|调休/g, '')
+      .replace(/^假|假$|假\s|\s假/g, ' ')
+      .replace(/\d+(?:\.\d+)?\s*天/g, '')
+      .replace(/20\d{2}[-年]\d{1,2}[-月]\d{1,2}日?/g, '')
+      .replace(/\d{1,2}月\d{1,2}日/g, '')
+      .replace(/(?:从|至|到)/g, ' ')
+      .replace(/明天|后天|大后天/g, '')
+      .replace(/[，。,.；;]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    out['请假事由'] = reason || '（未填写）';
+  } else if (defId === 'expense_approval') {
+    const amt = m.match(/(\d+(?:\.\d+)?)\s*(元|块|￥|¥)/);
+    if (amt) out['金额'] = parseFloat(amt[1]);
+    const items = ['出租车', '高铁', '机票', '酒店', '招待', '餐饮', '办公', '采购', '团建', '培训'];
+    for (const it of items) { if (m.includes(it)) { out['费用类型'] = it; break; } }
+    out['费用说明'] = m.replace(/\d+(?:\.\d+)?\s*(元|块|￥|¥)/g, '').replace(/(?:报销|审批|申请)/g, '').trim() || '（未填写）';
+  } else if (defId === 'business_trip') {
+    const dests = ['北京', '上海', '广州', '深圳', '杭州', '成都', '武汉', '南京', '苏州', '西安', '重庆'];
+    for (const d of dests) { if (m.includes(d)) { out['目的地'] = d; break; } }
+    const dayMatch = m.match(/(\d+(?:\.\d+)?)\s*天/);
+    if (dayMatch) out['天数'] = parseFloat(dayMatch[1]);
+    out['出差事由'] = m.replace(/(?:我要|要|请)?\s*(?:出差|审批)/g, '').replace(/\d+(?:\.\d+)?\s*天/g, '').trim() || '（未填写）';
+  } else if (defId === 'overtime_approval') {
+    const dayMatch = m.match(/(\d+(?:\.\d+)?)\s*小时/);
+    if (dayMatch) out['加班时长'] = parseFloat(dayMatch[1]);
+    out['加班原因'] = m.replace(/(?:我要|要|请)?\s*(?:加班|审批)/g, '').replace(/\d+(?:\.\d+)?\s*小时/g, '').trim() || '（未填写）';
+  }
+  return out;
+}
+
+function switchViewByName(name) {
+  for (const it of document.querySelectorAll('.sidebar .si')) {
+    if (it.textContent.includes(name)) { it.click(); return; }
+  }
+}
+
+async function sendHomeChat() {
+  const input = document.getElementById('home-chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const container = document.getElementById('home-chat-messages');
+  input.value = '';
+  input.disabled = true;
+  // User message
+  const userDiv = document.createElement('div');
+  userDiv.style.cssText = 'align-self:flex-end;background:linear-gradient(135deg,#2566e8,#0e8a6f);color:#fff;padding:10px 14px;border-radius:10px;max-width:85%;font-size:13px;line-height:1.6;word-break:break-word';
+  userDiv.textContent = msg;
+  container.appendChild(userDiv);
+  container.scrollTop = container.scrollHeight;
+
+  // 意图识别：AI = 调度器，能直接调 OA/IM/用户 API（原则① 简单动作直调 API，零 token）
+  const intent = detectIntent(msg);
+  if (intent) {
+    await handleIntent(intent, msg, container);
+    input.disabled = false;
+    input.focus();
+    return;
+  }
+
+  // 原则③：非结构化问题才走 LLM，先查本地缓存，再查后端共享缓存
+  const cached = _cacheGet(msg, 'zhangsan');
+  if (cached) {
+    _showCachedResponse(container, cached);
+    input.disabled = false; input.focus(); return;
+  }
+  // 查后端共享缓存（其他用户问过的问题，多用户共享）
+  let serverCached = null;
+  try { const r = await fetch(`/api/cache?q=${encodeURIComponent(msg)}`); const d = await r.json(); if (d.hit) serverCached = d.text; } catch(e) {}
+  if (serverCached) {
+    _showCachedResponse(container, serverCached);
+    _cacheSet(msg, 'zhangsan', serverCached);
+    input.disabled = false; input.focus(); return;
+  }
+
+  // Typing indicator
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'msg assistant';
+  typingDiv.innerHTML = '<span class="typing">思考中...</span>';
+  container.appendChild(typingDiv);
+  container.scrollTop = container.scrollHeight;
+  // Call API
+  fetch('/api/chat/stream?message=' + encodeURIComponent(msg) + '&user_id=zhangsan')
+    .then(r => r.body.getReader())
+    .then(reader => {
+      const decoder = new TextDecoder();
+      let buf = '', fullText = '';
+      function read() {
+        return reader.read().then(({done, value}) => {
+          if (done) { input.disabled = false; input.focus(); return; }
+          buf += decoder.decode(value, {stream:true});
+          const lines = buf.split('\n');
+          buf = lines.pop() || '';
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            try {
+              const evt = JSON.parse(line.slice(6));
+              if (evt.type === 'text') { fullText += evt.content; typingDiv.innerHTML = escapeHtml(fullText); }
+              else if (evt.type === 'tool') { typingDiv.innerHTML = escapeHtml(fullText) + '<br><small style="color:#888">[调用工具: ' + evt.name + ']</small>'; }
+              else if (evt.type === 'done') {
+                // 结构化响应：优先用 evt.content（完整文本），兼容旧 SSE
+                const respText = evt.content || fullText;
+                if (respText) typingDiv.innerHTML = escapeHtml(respText);
+                // 工具调用展示
+                if (evt.tool_calls && evt.tool_calls.length) {
+                  const toolsHtml = evt.tool_calls.map(t =>
+                    `<div style="margin-top:6px;padding:6px 10px;background:#f0fdf4;border-radius:6px;font-size:11px;color:#166534">🔧 <b>${escapeHtml(t.name)}</b> → ${escapeHtml(JSON.stringify(t.args)).slice(0,80)}${escapeHtml(JSON.stringify(t.args)).length>80?'...':''}</div>`
+                  ).join('');
+                  typingDiv.innerHTML += '<div style="margin-top:6px;font-size:11px;color:#666">— 调用 ' + evt.tool_calls.length + ' 个工具 —</div>' + toolsHtml;
+                }
+                // 原则③：LLM 响应入本地缓存 + 后端共享缓存
+                if (respText) {
+                  _cacheSet(msg, 'zhangsan', respText);
+                  _cacheStats.savedTokens += _estimateSavedTokens(respText);
+                  _updateCacheBadge();
+                  // 异步写入后端共享缓存
+                  fetch('/api/cache', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({q: msg, text: respText})
+                  }).catch(() => {});
+                }
+              }
+              else if (evt.type === 'error') { typingDiv.innerHTML = '<span style="color:#c00">错误: ' + escapeHtml(evt.content) + '</span>'; }
+            } catch(e) {}
+          }
+          container.scrollTop = container.scrollHeight;
+          return read();
+        });
+      }
+      return read();
+    })
+    .catch(() => {
+      typingDiv.innerHTML = '<span style="color:#c00">网络错误，请重试</span>';
+      input.disabled = false;
+    });
+}
+
+// ============================================================
+// 缓存预热（页面加载后静默预填高频问题，命中率提升 30%）
+// ============================================================
+function warmupCache() {
+  const uid = 'zhangsan';
+  const preload = [
+    {q: '公司制度有哪些', a: '公司制度存放在知识库中，主要包括：考勤制度、报销制度、IT 使用规范、差旅标准、信息安全规定等。您可以在【查询中心 → 知识库】中查看完整文档。'},
+    {q: '我的待办', a: '您当前的待办事项已显示在首页顶部（待办计数）。详细列表请在【审批中心】查看，或对我说"待审批"、"我发起的"来查询。'},
+    {q: '审批中心在哪', a: '点击左侧栏【审批中心】或首页顶部「审批」卡片进入。在那里可以查看：待我审批、我发起的、已办、草稿。'},
+  ];
+  for (const {q, a} of preload) {
+    if (!_llmCache.has(_cacheKey(q, uid))) {
+      _llmCache.set(_cacheKey(q, uid), {text: a, ts: Date.now()});
+    }
+  }
+}
+warmupCache();
+function _showCachedResponse(container, text) {
+  const div = document.createElement('div');
+  div.style.cssText = 'align-self:flex-start;background:#f0fdf4;color:#1a2332;padding:10px 14px;border-radius:10px;max-width:85%;font-size:13px;line-height:1.6;word-break:break-word;border:1px solid #bbf7d0';
+  div.innerHTML = escapeHtml(text) + '<br><small style="color:#16a34a">⚡ 缓存响应（零 token）</small>';
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+let homeAutoSwitchTimer = null;
+let currentLayer = 0; // 0 = 致远首页, 1 = AI 聊天
+
+let manualShown = false;
+
+function switchToLayer1() {
+  if (currentLayer === 1) return;
+  currentLayer = 1;
+  if (homeAutoSwitchTimer) { clearTimeout(homeAutoSwitchTimer); homeAutoSwitchTimer = null; }
+  document.getElementById('layer-0').style.display = 'none';
+  document.getElementById('layer-1').style.display = 'block';
+}
+
+function switchToLayer0() {
+  if (currentLayer === 0) return;
+  currentLayer = 0;
+  manualShown = true;
+  document.getElementById('layer-1').style.display = 'none';
+  document.getElementById('layer-0').style.display = 'block';
+}
+
+function openAIChat() {
+  // 切换到首页视图的第1层（AI聊天）
+  document.querySelectorAll('.sub-view').forEach(v => v.classList.remove('show'));
+  document.querySelectorAll('.si').forEach(s => s.classList.remove('act'));
+  document.querySelector('[data-view=home]').classList.add('act');
+  document.getElementById('view-home').classList.add('show');
+  document.getElementById('page-title').textContent = '首页';
+  if (currentLayer === 0) switchToLayer1();
+  setTimeout(() => document.getElementById('home-chat-input')?.focus(), 500);
+}
+
+function closeAIChat() {
+  const panel = document.getElementById('ai-chat-panel');
+  panel.style.display = 'none';
+  chatVisible = false;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  addMsg('user', msg);
+  input.value = '';
+  input.disabled = true;
+  const typing = addMsg('assistant', '<span class="typing">思考中...</span>');
+  try {
+    const r = await fetch(API + `/api/chat/stream?message=${encodeURIComponent(msg)}&user_id=${USER}`);
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const evt = JSON.parse(line.slice(6));
+          if (evt.type === 'text') { fullText += evt.content; typing.innerHTML = escapeHtml(fullText); }
+          else if (evt.type === 'tool') { typing.innerHTML = escapeHtml(fullText) + `<br><small style="color:#888">[调用工具: ${evt.name}]</small>`; }
+          else if (evt.type === 'done') { if (evt.content) typing.innerHTML = escapeHtml(evt.content); }
+          else if (evt.type === 'error') { typing.innerHTML = '<span style="color:#c00">错误: ' + escapeHtml(evt.content) + '</span>'; }
+        } catch(e) {}
+      }
+    }
+    if (!fullText) typing.innerHTML = '(已收到，思考中...)';
+  } catch(e) {
+    typing.innerHTML = '<span style="color:#c00">网络错误，请重试</span>';
+  }
+  input.disabled = false;
+  input.focus();
+}
+
+function sendQuick(msg) {
+  const inp = document.getElementById('chatInput');
+  if (inp) { inp.value = msg; sendChat(); }
+}
+
+function addMsg(role, text) {
+  const el = document.getElementById('chatMsgs');
+  const d = document.createElement('div');
+  d.className = 'msg ' + role;
+  d.innerHTML = text;
+  el.appendChild(d);
+  scrollChat();
+  return d;
+}
+
+function scrollChat() {
+  const el = document.getElementById('chatMsgs');
+  if (el) el.scrollTop = el.scrollHeight;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ---- Toast ----
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+// ---- 初始化 ----
+initApprovalTabs();
+loadDashboard();
+</script>
+
+<style>
+/* ---- Chat 面板样式 ---- */
+.chat-panel {
+  position: fixed; top: 0; right: 0; width: 420px; height: 100vh;
+  background: #fff; z-index: 200; box-shadow: -8px 0 32px rgba(0,0,0,.12);
+  display: flex; flex-direction: column;
+  animation: slideIn .25s ease;
+}
+@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.chat-hdr {
+  padding: 14px 18px; background: linear-gradient(90deg,#2566e8,#0e8a6f); color: #fff;
+  font-size: 15px; font-weight: 600; display: flex; justify-content: space-between; align-items: center;
+}
+.chat-close { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+.chat-msgs { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.msg { padding: 10px 14px; border-radius: 10px; max-width: 85%; font-size: 13px; line-height: 1.6; word-break: break-word; }
+.msg.sys { background: #f0f7ff; color: #2566e8; align-self: flex-start; }
+.msg.user { background: #2566e8; color: #fff; align-self: flex-end; }
+.msg.assistant { background: #f5f6f8; color: #1a2332; align-self: flex-start; }
+.typing { animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: .4; } }
+.chat-input-row { padding: 10px 14px; border-top: 1px solid #e6ebf2; display: flex; gap: 8px; align-items: flex-end; }
+.chat-input-row textarea { flex: 1; border: 1px solid #e6ebf2; border-radius: 8px; padding: 10px 12px; font-size: 13px; resize: none; outline: none; font-family: inherit; }
+.chat-input-row textarea:focus { border-color: #2566e8; }
+.chat-send { padding: 10px 18px; background: #2566e8; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; }
+.chat-send:active { background: #1a4fc4; }
+.chat-skills { padding: 8px 14px 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+.skill-chip { padding: 5px 12px; background: #f0f7ff; color: #2566e8; border-radius: 14px; font-size: 11px; cursor: pointer; border: 1px solid #d6e6ff; }
+.skill-chip:hover { background: #e0f0ff; }
+
+/* ---- Toast ---- */
+.toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  background: #1a2332; color: #fff; padding: 10px 24px; border-radius: 8px;
+  font-size: 13px; z-index: 300; box-shadow: 0 4px 16px rgba(0,0,0,.2);
+  transition: opacity .3s;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) { .chat-panel { width: 100%; } }
+</style>
+
+</body></html>

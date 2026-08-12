@@ -1,0 +1,40 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# ===== 虚拟环境 =====
+.venv/
+venv/
+env/
+
+# ===== 测试与工具 =====
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# ===== 运行时数据（含敏感信息，绝不提交）=====
+.harness/
+.workbuddy/
+
+# ===== 备份与临时 =====
+*.bak
+*.tmp
+*.swp
+.DS_Store
+
+# ===== IDE =====
+.idea/
+.vscode/
+*.iml
+# 包内残留数据
+harness/.harness/
+
+# 本地端到端脚本与个人日志
+test_e2e.py
+test_work_log.txt
