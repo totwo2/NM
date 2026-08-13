@@ -61,7 +61,7 @@ def list_users(role: Optional[str] = None, department: Optional[str] = None):
         users = [u for u in users if u.get("role") == role]
     if department:
         users = [u for u in users if u.get("department") == department]
-    return {"total": len(users), "items": users}
+    return {"total": len(users), "items": [_safe_user(u) for u in users]}
 
 
 @router.get("/api/users/me")
@@ -70,7 +70,7 @@ def get_me(user_id: str = Query(...)):
     u = store.get(user_id)
     if not u:
         raise HTTPException(404, "User not found")
-    return u
+    return _safe_user(u)
 
 
 @router.get("/api/users/{user_id}")
@@ -79,7 +79,7 @@ def get_user(user_id: str):
     u = store.get(user_id)
     if not u:
         raise HTTPException(404, "User not found")
-    return u
+    return _safe_user(u)
 
 
 @router.post("/api/users")
@@ -88,7 +88,7 @@ def create_user(req: UserCreate):
     try:
         u = store.create(req.user_id, req.name, email=req.email, department=req.department,
                          role=req.role, manager_id=req.manager_id, avatar=req.avatar)
-        return u
+        return _safe_user(u)
     except ValueError as e:
         raise HTTPException(400, str(e))
 
@@ -98,11 +98,11 @@ def update_user(user_id: str, req: UserUpdate):
     store = _get_store()
     data = {k: v for k, v in req.model_dump().items() if v is not None}
     if not data:
-        return store.get(user_id) or {}
+        return _safe_user(store.get(user_id) or {})
     u = store.update(user_id, **data)
     if not u:
         raise HTTPException(404, "User not found")
-    return u
+    return _safe_user(u)
 
 
 @router.delete("/api/users/{user_id}")
@@ -112,6 +112,11 @@ def delete_user(user_id: str):
     if not ok:
         raise HTTPException(404, "User not found")
     return {"ok": True}
+
+
+def _safe_user(u: dict) -> dict:
+    """剔除敏感字段（password_hash）后的用户对象，用于 API 返回"""
+    return {k: v for k, v in u.items() if k != "password_hash"}
 
 
 @router.post("/api/auth/login")
@@ -141,7 +146,7 @@ def login(req: LoginReq, request: Request):
     # 签发 session token
     from harness.auth import get_session_store
     token = get_session_store().create(req.user_id)
-    return {"user": u, "token": token}
+    return {"user": _safe_user(u), "token": token}
 
 
 @router.post("/api/auth/logout")
@@ -163,7 +168,7 @@ def auth_me(request: Request):
     u = store.get(uid)
     if not u:
         raise HTTPException(401, "用户不存在")
-    return {"user": u}
+    return {"user": _safe_user(u)}
 
 
 @router.get("/api/departments")

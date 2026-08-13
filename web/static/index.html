@@ -265,7 +265,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei
 
   <div class="main">
     <header class="topbar">
-      <h1>首页门户</h1>
+      <h1 id="page-title">首页门户</h1>
       <span class="crumb">/ 默认首页</span>
       <div class="right">
         <div class="act">🔍 搜索 · <span class="kbd">⌘K</span></div>
@@ -601,7 +601,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei
 
 <script>
 const API = '';
-const USER = 'zhangsan';
+// 当前用户 ID：从登录态动态获取（避免硬编码）
+// 注意：currentUser 必须在 getUserId() 之前声明（TDZ 安全）
+let currentUser = null;
+let currentPermissions = {im_admin: false, oa_admin: false, is_super_admin: false};
+function getUserId() {
+  if (currentUser && currentUser.id) return currentUser.id;
+  return localStorage.getItem('wb_user_id') || 'default';
+}
+let USER = getUserId();  // 登录成功后更新
 let currentView = 'home';
 let chatVisible = false;
 let chatPanel = null;
@@ -677,6 +685,8 @@ document.addEventListener('DOMContentLoaded', () => {
       throw new Error('unauthorized');
     }).then(me => {
       currentUser = me.user;
+      localStorage.setItem('wb_user_id', me.user.id);
+      USER = me.user.id;
       loadDashboard();
       showMainUI();
       // 5秒后自动折叠第0层，展示第1层（AI聊天）
@@ -720,8 +730,14 @@ function switchView(item) {
   document.querySelectorAll('.sub-view').forEach(v => v.classList.remove('show'));
   document.querySelectorAll('.si').forEach(s => s.classList.remove('act'));
   item.classList.add('act');
-  const titles = {approval:'审批中心',groups:'部门群组',query:'查询中心','im-settings':'IM 设置','oa-settings':'OA 设置'};
+  const titles = {approval:'审批中心',groups:'部门群组',query:'查询中心','im-settings':'IM 设置','oa-settings':'OA 设置','ai-chat':'AI 助手'};
   document.getElementById('page-title').textContent = titles[view] || '首页';
+  // AI 助手 = 首页的 layer 1（聊天层）
+  if (view === 'ai-chat') {
+    document.getElementById('view-home').classList.add('show');
+    switchToLayer1();
+    return;
+  }
   const viewMap = {approval:'view-approval',groups:'view-groups',query:'view-query','im-settings':'view-im-settings','oa-settings':'view-oa-settings'};
   if (viewMap[view]) document.getElementById(viewMap[view]).classList.add('show');
   if (view === 'approval') loadApprovals('pending');
@@ -731,8 +747,7 @@ function switchView(item) {
 }
 
 // ===== 登录 & 权限 =====
-let currentUser = null;
-let currentPermissions = {im_admin: false, oa_admin: false, is_super_admin: false};
+// currentUser / currentPermissions 已在脚本顶部声明（getUserId 前）
 
 // ---- 全局 fetch 包装：自动附加 Authorization header ----
 const _origFetch = window.fetch;
@@ -774,6 +789,8 @@ async function doLogin() {
     const data = await resp.json();
     currentUser = data.user;
     localStorage.setItem('wb_token', data.token);
+    localStorage.setItem('wb_user_id', data.user.id);
+    USER = data.user.id;
     const permResp = await fetch('/api/auth/permissions?user_id=' + currentUser.id);
     const perm = await permResp.json();
     currentPermissions = perm.permissions;
@@ -1193,7 +1210,7 @@ async function loadDashboard() {
     const d = await r.json();
     const greet = document.querySelector('.greet');
     if (greet) {
-      greet.innerHTML = `<div><b>王主任，${d.greeting}</b> 待办 <span class="hl">${d.pending_todos||0}</span> 条 · 审批 <span class="hl">${d.pending_approvals||0}</span> 条</div><div>📅 ${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'})}</div>`;
+      greet.innerHTML = `<div><b>${d.user_name||currentUser?.name||'您好'}，${d.greeting}</b> 待办 <span class="hl">${d.pending_todos||0}</span> 条 · 审批 <span class="hl">${d.pending_approvals||0}</span> 条</div><div>📅 ${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'})}</div>`;
     }
     const badge = document.getElementById('approval-badge');
     if (badge) badge.textContent = d.pending_approvals || 0;
@@ -2094,7 +2111,7 @@ function showToast(msg) {
 
 // ---- 初始化 ----
 initApprovalTabs();
-loadDashboard();
+// loadDashboard() 仅在登录后调用（已在 DOMContentLoaded 登录分支中处理）
 </script>
 
 <style>

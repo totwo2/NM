@@ -582,6 +582,17 @@ async def get_dashboard(user_id: str = "default"):
     """首页门户数据"""
     harness = get_harness()
 
+    # 用户信息（问候语用真实姓名）
+    user_name = user_id
+    try:
+        from harness.users.user_store import UserStore
+        user_path = os.path.join(WORKSPACE, ".harness", "users.json")
+        u = UserStore(user_path).get(user_id)
+        if u and u.get("name"):
+            user_name = u["name"]
+    except Exception:
+        pass
+
     # 用量
     report = _model_manager.get_usage_report(user_id=user_id) if _model_manager else {}
 
@@ -599,6 +610,7 @@ async def get_dashboard(user_id: str = "default"):
         pending_details = []
 
     return {
+        "user_name": user_name,
         "greeting": _get_greeting(),
         "pending_approvals": oa_stats["pending_approvals"],
         "pending_todos": oa_stats.get("my_drafts", 0),
