@@ -1,8 +1,8 @@
-# WorkBuddy AI — 企业智能办公助手
+# N.M — 企业智能办公助手
 
 > 打工人自己的 AI 工作台：AI 助手 + 手搓 OA 审批 + 内部沟通，一个入口搞定全部办公操作。
 
-WorkBuddy AI 是一个**面向办公室普通人群**的 AI 智能体产品。它把"AI 对话"与"企业内部办公系统"深度集成——你可以直接用自然语言发起审批、查数据、写公文、和同事沟通，而不需要打开五六个不同的系统。
+N.M 是一个**面向办公室普通人群**的 AI 智能体产品。它把"AI 对话"与"企业内部办公系统"深度集成——你可以直接用自然语言发起审批、查数据、写公文、和同事沟通，而不需要打开五六个不同的系统。
 
 ```
 🏢 一个登录 → 搞定一切
@@ -33,7 +33,7 @@ WorkBuddy AI 是一个**面向办公室普通人群**的 AI 智能体产品。�
 ```bash
 # 1. 克隆并安装
 git clone <your-repo-url>
-cd workbuddy-ai
+cd nm
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -56,11 +56,11 @@ export HARNESS_MODEL="gpt-4o-mini"
 ### Docker 部署
 
 ```bash
-docker build -t workbuddy-ai .
+docker build -t nm .
 docker run -d -p 8787:8787 \
   -e OPENAI_API_KEY="sk-xxx" \
-  -v workbuddy-data:/app/.harness \
-  workbuddy-ai
+  -v nm-data:/app/.harness \
+  nm
 ```
 
 > 数据默认存储在 `./.harness/`（单 JSON 文件，备份 = 复制目录）。
@@ -111,7 +111,7 @@ docker run -d -p 8787:8787 \
 ### 目录结构
 
 ```
-workbuddy-ai/
+nm/
 ├── harness/              # 核心引擎
 │   ├── agent_loop.py     #   Agent 主循环
 │   ├── task_router.py    #   智能模型路由
@@ -168,4 +168,4 @@ pytest            # 67 个测试全绿
 
 ---
 
-**WorkBuddy AI** — 让打工人把所有办公操作，放进一个对话框。
+**N.M** — 让打工人把所有办公操作，放进一个对话框。

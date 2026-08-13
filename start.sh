@@ -1,5 +1,5 @@
 #!/bin/bash
-# WorkBuddy AI 启动脚本（本地开发）
+# N.M 启动脚本（本地开发）
 # 用法: ./start.sh  [port]
 set -e
 cd "$(dirname "$0")"
@@ -13,5 +13,5 @@ if [ ! -d ".venv" ]; then
   .venv/bin/pip install -r requirements.txt
 fi
 
-echo "🚀 WorkBuddy AI 启动中 → http://localhost:${PORT}"
+echo "🚀 N.M 启动中 → http://localhost:${PORT}"
 exec .venv/bin/python web/server.py

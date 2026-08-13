@@ -1,5 +1,5 @@
 """
-AI Agent Harness — 企业智能办公助手
+N.M — 企业智能办公助手
 
 完整套装: AgentLoop + TaskRouter + ModelManager + Memory + 自进化 + Web UI
 """
@@ -12,7 +12,7 @@ with open("requirements.txt") as f:
 setup(
     name="ai-agent-harness",
     version="2.0.0",
-    description="企业级 AI Agent Harness — OA + IM + 记忆 + 自进化",
+    description="企业级 N.M — OA + IM + 记忆 + 自进化",
     long_description=__doc__,
     author="老高",
     packages=find_packages(include=["harness", "harness.*", "web"]),

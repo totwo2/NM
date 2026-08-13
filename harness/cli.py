@@ -127,7 +127,7 @@ def main():
     """CLI 入口"""
     import argparse
 
-    parser = argparse.ArgumentParser(description="AI Agent Harness - 企业智能办公助手")
+    parser = argparse.ArgumentParser(description="N.M - 企业智能办公助手")
     parser.add_argument("--workspace", "-w", help="工作目录", default=os.getcwd())
     parser.add_argument("--permission", "-p", choices=["auto", "ask", "strict"],
                         default="ask", help="权限模式（默认: ask）")
@@ -137,7 +137,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 60)
-    print("  AI Agent Harness")
+    print("  N.M")
     print("  企业智能办公助手")
     print("=" * 60)
     print(f"  工作目录: {args.workspace}")

@@ -1,5 +1,5 @@
 """
-Harness Web 后端 — FastAPI
+N.M 后端 — FastAPI
 提供 REST API + SSE 流式响应，对接 AgentLoop
 """
 
@@ -89,7 +89,7 @@ async def lifespan(app):
             logger.warning("Demo data init failed: %s", e)
     yield
 
-app = FastAPI(title="AI Agent Harness", version="2.0.0", lifespan=lifespan)
+app = FastAPI(title="N.M", version="2.0.0", lifespan=lifespan)
 
 # ============================================================================
 # 认证中间件：所有 /api/* 请求需 Bearer token（登录接口除外）
@@ -419,7 +419,7 @@ async def index():
     path = os.path.join(STATIC_DIR, "index.html")
     if os.path.exists(path):
         return FileResponse(path)
-    return HTMLResponse("<h1>Harness Web</h1><p>Frontend not found. Place index.html in web/static/</p>")
+    return HTMLResponse("<h1>N.M</h1><p>Frontend not found. Place index.html in web/static/</p>")
 
 
 # ============================================================================
@@ -728,7 +728,7 @@ def main_entry():
     import uvicorn
 
     port = int(os.getenv("HARNESS_PORT", "8787"))
-    logger.info(f"Starting Harness Web on http://localhost:{port}")
+    logger.info(f"Starting N.M on http://localhost:{port}")
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
 
 
