@@ -20,19 +20,19 @@ from pydantic import BaseModel
 
 # Harness 依赖
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from harness.model_manager import ModelManager, Group
-from harness.task_router import TaskRouter
-from harness.config import HarnessConfig
-from harness.context_manager import ContextManager
-from harness.permission_checker import PermissionChecker
-from harness.types import PermissionMode
-from harness.tool_registry import ToolRegistry
-from harness.memory.memory_adapter import MemoryAdapter
-from harness.agent_loop import AgentLoop
-from harness.self_evolution import SelfEvolution
+from nm.model_manager import ModelManager, Group
+from nm.task_router import TaskRouter
+from nm.config import HarnessConfig
+from nm.context_manager import ContextManager
+from nm.permission_checker import PermissionChecker
+from nm.types import PermissionMode
+from nm.tool_registry import ToolRegistry
+from nm.memory.memory_adapter import MemoryAdapter
+from nm.agent_loop import AgentLoop
+from nm.self_evolution import SelfEvolution
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("harness.web")
+logger = logging.getLogger("nm.web")
 
 
 # ============================================================================
@@ -48,13 +48,23 @@ from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(app):
     import os
-    from harness.auth import init_auth
-    # 初始化认证 session 存储（.harness/sessions.json）
-    init_auth(os.path.join(WORKSPACE, ".harness", "sessions.json"))
+    from nm.auth import init_auth
+    from nm.migrations import migrate_legacy_data
+    # 启动时自动迁移旧数据（legacy 目录 → .nm），幂等，源数据不删
+    # 幂等：已迁移过则 noop；源数据永不删除
+    try:
+        mres = migrate_legacy_data(WORKSPACE)
+        if mres.get("status") == "migrated":
+            logger.info(f"Legacy data migrated to .nm: {mres.get('files')} files from {mres.get('sources')}")
+    except Exception as e:
+        logger.warning("Legacy migration skipped: %s", e)
+
+    # 初始化认证 session 存储（.nm/sessions.json）
+    init_auth(os.path.join(WORKSPACE, ".nm", "sessions.json"))
 
     # 确保用户库存在（首次启动种子化，含演示密码 demo123）
-    from harness.users.user_store import UserStore
-    users_path = os.path.join(WORKSPACE, ".harness", "users.json")
+    from nm.users.user_store import UserStore
+    users_path = os.path.join(WORKSPACE, ".nm", "users.json")
     try:
         us = UserStore(users_path)
         if not os.path.exists(users_path):
@@ -63,18 +73,18 @@ async def lifespan(app):
     except Exception as e:
         logger.warning("User seed failed: %s", e)
 
-    oa_path = os.path.join(WORKSPACE, ".harness", "oa_store.json")
+    oa_path = os.path.join(WORKSPACE, ".nm", "oa_store.json")
     if not os.path.exists(oa_path):
         try:
-            from harness.oa.oa_store import OAStore
-            from harness.oa.workflow import WorkflowEngine
-            from harness.im.im_store import IMStore
-            from harness.im.im_engine import IMEngine
-            from harness.oa.presets import register_all_presets
+            from nm.oa.oa_store import OAStore
+            from nm.oa.workflow import WorkflowEngine
+            from nm.im.im_store import IMStore
+            from nm.im.im_engine import IMEngine
+            from nm.oa.presets import register_all_presets
             oa_store = OAStore(oa_path)
             oa_engine = WorkflowEngine(oa_store)
             register_all_presets(oa_engine)
-            im_path = os.path.join(WORKSPACE, ".harness", "im_store.json")
+            im_path = os.path.join(WORKSPACE, ".nm", "im_store.json")
             im_engine = IMEngine(store_path=im_path)
             g1 = im_engine.create_group("研发部", "zhangsan", "研发部门沟通群", "department")
             g2 = im_engine.create_group("Alpha 项目", "zhangsan", "Alpha 项目攻坚组", "project")
@@ -94,7 +104,7 @@ app = FastAPI(title="N.M", version="2.0.0", lifespan=lifespan)
 # ============================================================================
 # 认证中间件：所有 /api/* 请求需 Bearer token（登录接口除外）
 # ============================================================================
-from harness.auth_middleware import auth_middleware
+from nm.auth_middleware import auth_middleware
 app.middleware("http")(auth_middleware)
 
 app.add_middleware(
@@ -112,7 +122,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 import hashlib
 from collections import defaultdict
 
-LLM_CACHE_FILE = os.path.join(WORKSPACE, ".harness", "llm_cache.json")
+LLM_CACHE_FILE = os.path.join(WORKSPACE, ".nm", "llm_cache.json")
 _llm_cache: dict[str, dict] = {}  # key=sha1(msg.lower()), value={text, ts, hits}
 _llm_cache_ttl = 24 * 3600  # 24h
 _llm_cache_hits = defaultdict(int)
@@ -269,8 +279,8 @@ def get_session_store() -> Any:
     """获取全局会话历史存储（lazy init）"""
     global _session_store
     if _session_store is None:
-        from harness.session_store import SessionStore
-        _session_store = SessionStore(os.path.join(WORKSPACE, ".harness", "sessions_hist.json"))
+        from nm.session_store import SessionStore
+        _session_store = SessionStore(os.path.join(WORKSPACE, ".nm", "sessions_hist.json"))
     return _session_store
 
 
@@ -289,8 +299,8 @@ def get_harness() -> AgentLoop:
 
     # Memory
     mem = MemoryAdapter(
-        os.path.join(WORKSPACE, ".harness", "web_mem.json"),
-        os.path.join(WORKSPACE, ".harness", "web_trans.jsonl"),
+        os.path.join(WORKSPACE, ".nm", "web_mem.json"),
+        os.path.join(WORKSPACE, ".nm", "web_trans.jsonl"),
         ttl_days=30,
     )
     _memory = mem
@@ -364,7 +374,7 @@ def _setup_models(mm: ModelManager) -> None:
     # 方法1: 环境变量
     api_key = os.getenv("OPENAI_API_KEY")
     base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
-    model = os.getenv("HARNESS_MODEL", "gpt-4o-mini")
+    model = os.getenv("NM_MODEL", "gpt-4o-mini")
 
     if api_key:
         mm.register_provider("cloud", "cloud", base_url, api_key, [model])
@@ -462,15 +472,15 @@ async def chat_stream(message: str, user_id: str = "default", session_id: str | 
         try:
             harness = get_harness()
             # 注入回调
-            harness.on_text = on_text
-            harness.on_tool_call = on_tool
-            harness.on_tool_result = lambda n, r: None
+            nm.on_text = on_text
+            nm.on_tool_call = on_tool
+            nm.on_tool_result = lambda n, r: None
 
             # 在线程中运行 AgentLoop（因为是同步的）
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(
                 None,
-                lambda: harness.run(message, user_id=user_id, session_id=session_id)
+                lambda: nm.run(message, user_id=user_id, session_id=session_id)
             )
 
             # 发送缓冲事件
@@ -523,7 +533,7 @@ async def chat(req: ChatRequest):
     
     # 未命中：正常走 AgentLoop
     harness = get_harness()
-    result = harness.run(req.message, user_id=req.user_id, session_id=req.session_id, force_model=req.force_model)
+    result = nm.run(req.message, user_id=req.user_id, session_id=req.session_id, force_model=req.force_model)
 
     # 用量统计
     report = _model_manager.get_usage_report(user_id=req.user_id)
@@ -559,14 +569,14 @@ async def chat(req: ChatRequest):
 # OA 工作流引擎（真实审批系统）
 # ============================================================================
 
-from harness.oa.oa_api import mount_oa_routes
-from harness.im.im_api import mount_im_routes
-from harness.users.user_api import mount_user_routes
+from nm.oa.oa_api import mount_oa_routes
+from nm.im.im_api import mount_im_routes
+from nm.users.user_api import mount_user_routes
 
 mount_oa_routes(app, WORKSPACE)
 mount_im_routes(app, WORKSPACE)
 mount_user_routes(app)
-from harness.oa import mount_oa_admin_routes
+from nm.oa import mount_oa_admin_routes
 mount_oa_admin_routes(app)
 
 
@@ -585,8 +595,8 @@ async def get_dashboard(user_id: str = "default"):
     # 用户信息（问候语用真实姓名）
     user_name = user_id
     try:
-        from harness.users.user_store import UserStore
-        user_path = os.path.join(WORKSPACE, ".harness", "users.json")
+        from nm.users.user_store import UserStore
+        user_path = os.path.join(WORKSPACE, ".nm", "users.json")
         u = UserStore(user_path).get(user_id)
         if u and u.get("name"):
             user_name = u["name"]
@@ -601,7 +611,7 @@ async def get_dashboard(user_id: str = "default"):
 
     # OA 统计数据（真实 OA 引擎）
     try:
-        from harness.oa.oa_api import get_engine
+        from nm.oa.oa_api import get_engine
         oa_engine = get_engine()
         oa_stats = oa_engine.stats(user_id)
         pending_details = oa_engine.get_pending(user_id)
@@ -655,7 +665,7 @@ async def morning_brief(user_id: str = "default"):
 {mem_text[:2000] if mem_text else "(无历史记忆)"}"""
 
     harness = get_harness()
-    raw = harness.run(prompt, user_id=user_id)
+    raw = nm.run(prompt, user_id=user_id)
     result = raw.get("text", raw) if isinstance(raw, dict) else raw
     return {"brief": result}
 
@@ -674,7 +684,7 @@ async def generate_document(
     """生成文档（走 AgentLoop → OA 工具）"""
     harness = get_harness()
     prompt = f"使用模板 {template} 生成一份{doc_type}文档，内容: {content}"
-    raw = harness.run(prompt, user_id=user_id)
+    raw = nm.run(prompt, user_id=user_id)
     result = raw.get("text", raw) if isinstance(raw, dict) else raw
     return {"result": result, "turns": raw.get("turns", 1) if isinstance(raw, dict) else 1}
 
@@ -727,7 +737,7 @@ def main_entry():
     """pip entry point: harness-web"""
     import uvicorn
 
-    port = int(os.getenv("HARNESS_PORT", "8787"))
+    port = int(os.getenv("NM_PORT", "8787"))
     logger.info(f"Starting N.M on http://localhost:{port}")
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
 

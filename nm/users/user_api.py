@@ -13,7 +13,7 @@ _store: UserStore | None = None
 def _get_store() -> UserStore:
     global _store
     if _store is None:
-        path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".harness", "users.json")
+        path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".nm", "users.json")
         _store = UserStore(path)
         # 首次启动预置演示用户
         try:
@@ -48,7 +48,7 @@ class UserUpdate(BaseModel):
 
 class LoginReq(BaseModel):
     user_id: str
-    password: str = ""  # 演示版允许空密码直接登录（HARNESS_ALLOW_EMPTY_PASSWORD=1 时）
+    password: str = ""  # 演示版允许空密码直接登录（NM_ALLOW_EMPTY_PASSWORD=1 时）
 
 
 # ---- Routes ----
@@ -127,31 +127,31 @@ def login(req: LoginReq, request: Request):
     if not u or not u.get("is_active", True):
         raise HTTPException(401, "用户名或密码错误")
 
-    # 空密码快速登录开关（默认关闭；演示环境可设 HARNESS_ALLOW_EMPTY_PASSWORD=1）
-    allow_empty = os.getenv("HARNESS_ALLOW_EMPTY_PASSWORD", "0") == "1"
+    # 空密码快速登录开关（默认关闭；演示环境可设 NM_ALLOW_EMPTY_PASSWORD=1）
+    allow_empty = os.getenv("NM_ALLOW_EMPTY_PASSWORD", "0") == "1"
     stored_hash = u.get("password_hash", "")
     if req.password:
-        from harness.auth import verify_password
+        from nm.auth import verify_password
         if not verify_password(req.password, stored_hash):
             raise HTTPException(401, "用户名或密码错误")
     elif allow_empty and not stored_hash:
         pass  # 仅当用户无密码哈希时可空密码登录
     elif allow_empty:
-        from harness.auth import verify_password
+        from nm.auth import verify_password
         if not verify_password("", stored_hash):
             raise HTTPException(401, "用户名或密码错误")
     else:
         raise HTTPException(401, "请输入密码")
 
     # 签发 session token
-    from harness.auth import get_session_store
+    from nm.auth import get_session_store
     token = get_session_store().create(req.user_id)
     return {"user": _safe_user(u), "token": token}
 
 
 @router.post("/api/auth/logout")
 def logout(request: Request):
-    from harness.auth import get_session_store, extract_token
+    from nm.auth import get_session_store, extract_token
     token = extract_token(request)
     if token:
         get_session_store().revoke(token)

@@ -8,7 +8,7 @@ import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from harness.session_store import SessionStore, MAX_MESSAGES
+from nm.session_store import SessionStore, MAX_MESSAGES
 
 
 class TestSessionStore:

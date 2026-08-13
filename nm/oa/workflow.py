@@ -221,7 +221,7 @@ class WorkflowEngine:
     """OA 工作流引擎
 
     使用方式:
-        store = OAStore(".harness/oa_store.json")
+        store = OAStore(".nm/oa_store.json")
         engine = WorkflowEngine(store)
 
         # 发起审批
@@ -346,9 +346,9 @@ class WorkflowEngine:
             return  # 已显式指定
         # 懒加载 UserStore 避免循环依赖
         try:
-            from harness.users.user_store import UserStore
+            from nm.users.user_store import UserStore
             import os
-            user_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".harness", "users.json")
+            user_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".nm", "users.json")
             store = UserStore(path=user_path)
             store.seed_demo()  # 确保有种子用户
             initiator = store.get(inst.initiator)
@@ -406,9 +406,9 @@ class WorkflowEngine:
         # 审批完成（全流程结束）→ 扣减假期余额
         if inst.status == "completed":
             try:
-                from harness.users.user_store import UserStore
+                from nm.users.user_store import UserStore
                 import os
-                user_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".harness", "users.json")
+                user_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".nm", "users.json")
                 store = UserStore(path=user_path)
                 leave_type = inst.form_data.get("请假类型", "")
                 days = float(inst.form_data.get("天数", 0))
@@ -426,9 +426,9 @@ class WorkflowEngine:
                 key = f"_assignee_{next_step.id}"
                 if not inst.form_data.get(key):
                     try:
-                        from harness.users.user_store import UserStore
+                        from nm.users.user_store import UserStore
                         import os
-                        user_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".harness", "users.json")
+                        user_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".nm", "users.json")
                         store = UserStore(path=user_path)
                         store.seed_demo()
                         approver = store.get(user_id)

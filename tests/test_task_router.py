@@ -5,8 +5,8 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from harness.task_router import TaskRouter, TaskSignal
-from harness.types import Complexity, Domain
+from nm.task_router import TaskRouter, TaskSignal
+from nm.types import Complexity, Domain
 
 
 class FakeMM:

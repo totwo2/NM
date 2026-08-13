@@ -8,8 +8,8 @@ import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from harness.oa.oa_store import OAStore
-from harness.oa.workflow import WorkflowEngine
+from nm.oa.oa_store import OAStore
+from nm.oa.workflow import WorkflowEngine
 
 
 class TestServerBoot:

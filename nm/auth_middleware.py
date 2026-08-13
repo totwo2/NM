@@ -5,7 +5,7 @@ harness/auth_middleware.py — FastAPI 认证中间件
 - 若请求 query 携带 user_id，必须与 token 身份一致，否则 403（防伪造身份）
 
 用法（web/server.py）:
-    from harness.auth_middleware import auth_middleware
+    from nm.auth_middleware import auth_middleware
     app.middleware("http")(auth_middleware)
 """
 from __future__ import annotations
@@ -15,7 +15,7 @@ import logging
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-from harness.auth import get_session_store, extract_token
+from nm.auth import get_session_store, extract_token
 
 logger = logging.getLogger(__name__)
 

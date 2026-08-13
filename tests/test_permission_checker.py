@@ -5,7 +5,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from harness.permission_checker import PermissionChecker, PermissionMode, DANGEROUS_PATTERNS
+from nm.permission_checker import PermissionChecker, PermissionMode, DANGEROUS_PATTERNS
 
 
 class TestAutoMode:

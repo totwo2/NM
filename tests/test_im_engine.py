@@ -5,11 +5,11 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from harness.im.im_engine import IMEngine
+from nm.im.im_engine import IMEngine
 
 
 def make_engine(tmp_path):
-    from harness.im.im_store import IMStore
+    from nm.im.im_store import IMStore
     return IMEngine(store=IMStore(str(tmp_path / "im.json")))
 
 

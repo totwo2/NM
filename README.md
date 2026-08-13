@@ -42,7 +42,7 @@ pip install -r requirements.txt
 # 方式 A: 环境变量
 export OPENAI_API_KEY="sk-xxx"
 export OPENAI_BASE_URL="https://api.openai.com/v1"
-export HARNESS_MODEL="gpt-4o-mini"
+export NM_MODEL="gpt-4o-mini"
 
 # 方式 B: 自动发现 ~/.qclaw/openclaw.json（已有配置则跳过）
 
@@ -59,11 +59,11 @@ export HARNESS_MODEL="gpt-4o-mini"
 docker build -t nm .
 docker run -d -p 8787:8787 \
   -e OPENAI_API_KEY="sk-xxx" \
-  -v nm-data:/app/.harness \
+  -v nm-data:/app/.nm \
   nm
 ```
 
-> 数据默认存储在 `./.harness/`（单 JSON 文件，备份 = 复制目录）。
+> 数据默认存储在 `./.nm/`（单 JSON 文件，备份 = 复制目录）。
 
 ### 演示账号
 
@@ -112,7 +112,7 @@ docker run -d -p 8787:8787 \
 
 ```
 nm/
-├── harness/              # 核心引擎
+├── nm/              # 核心引擎
 │   ├── agent_loop.py     #   Agent 主循环
 │   ├── task_router.py    #   智能模型路由
 │   ├── model_manager.py  #   模型账号/配额/费用
@@ -137,13 +137,13 @@ nm/
 
 | 环境变量 | 默认值 | 说明 |
 |----------|--------|------|
-| `HARNESS_PORT` | `8787` | Web 服务端口 |
+| `NM_PORT` | `8787` | Web 服务端口 |
 | `OPENAI_API_KEY` | - | OpenAI 兼容 API Key |
 | `OPENAI_BASE_URL` | `https://api.openai.com/v1` | API 端点（可指向任意 OpenAI 兼容网关） |
-| `HARNESS_MODEL` | `gpt-4o-mini` | 默认模型 |
-| `HARNESS_MAX_TURNS` | `50` | 单次对话最大轮数 |
-| `HARNESS_MEMORY_TTL_DAYS` | `30` | 记忆过期天数 |
-| `HARNESS_ALLOW_EMPTY_PASSWORD` | `0` | 演示模式允许空密码（设为 1 开启） |
+| `NM_MODEL` | `gpt-4o-mini` | 默认模型 |
+| `NM_MAX_TURNS` | `50` | 单次对话最大轮数 |
+| `NM_MEMORY_TTL_DAYS` | `30` | 记忆过期天数 |
+| `NM_ALLOW_EMPTY_PASSWORD` | `0` | 演示模式允许空密码（设为 1 开启） |
 
 > 未配置 `OPENAI_API_KEY` 时，服务会自动发现 `~/.qclaw/openclaw.json`（QClaw 网关配置）。
 

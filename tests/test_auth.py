@@ -9,7 +9,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from harness.auth import hash_password, verify_password, SessionStore
+from nm.auth import hash_password, verify_password, SessionStore
 
 
 class TestPasswordHash:

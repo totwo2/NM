@@ -5,7 +5,7 @@ __pycache__
 .gitignore
 .pytest_cache
 *.egg-info
-.harness
+.nm
 Dockerfile
 start.sh
 test_e2e.py

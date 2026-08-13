@@ -14,8 +14,8 @@ N.M — 企业智能办公助手
 - CowAgent + Flink       → 记忆自进化
 
 用法:
-    python -m harness.cli                    # 交互模式
-    python -m harness.cli -o "帮我写一份通知"  # 单次模式
+    python -m nm.cli                    # 交互模式
+    python -m nm.cli -o "帮我写一份通知"  # 单次模式
 """
 
 from .agent_loop import AgentLoop

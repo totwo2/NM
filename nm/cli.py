@@ -38,7 +38,7 @@ def _build_harness(
         config.permission_mode = PermissionMode(permission_mode)
 
     # ModelManager
-    model_manager = ModelManager(config_file or ".harness/model_config.json")
+    model_manager = ModelManager(config_file or ".nm/model_config.json")
     # 如果没有配置，尝试从环境变量读
     if not model_manager._providers:
         _setup_from_env(model_manager, config)
@@ -145,6 +145,15 @@ def main():
     print(f"  工具数量: {len(ToolRegistry.create_default(args.workspace).list_all())}")
     print()
 
+    # 启动时自动迁移旧数据（legacy 目录 → .nm）
+    try:
+        from nm.migrations import migrate_legacy_data
+        mres = migrate_legacy_data(args.workspace)
+        if mres.get("status") == "migrated":
+            print(f"  旧数据已迁移: {mres.get('files')} 个文件 → .nm")
+    except Exception as e:
+        print(f"  (迁移跳过: {e})")
+
     harness = _build_harness(
         workspace_dir=args.workspace,
         permission_mode=args.permission,
@@ -154,7 +163,7 @@ def main():
     # 单次执行模式
     if args.oneshot:
         print(f"> {args.oneshot}\n")
-        response = harness.run(args.oneshot, force_model=args.model)
+        response = nm.run(args.oneshot, force_model=args.model)
         print(f"\n{response}")
         return
 
@@ -191,17 +200,17 @@ def main():
             continue
 
         if user_input == "/stats":
-            stats = harness.memory.stats()
+            stats = nm.memory.stats()
             print(json.dumps(stats, indent=2, ensure_ascii=False))
             continue
 
         if user_input == "/clear":
-            harness.context.clear()
+            nm.context.clear()
             print("上下文已清空")
             continue
 
         if user_input == "/checkpoints":
-            cps = harness.memory.list_checkpoints()
+            cps = nm.memory.list_checkpoints()
             if cps:
                 for cp in cps:
                     print(f"  {cp['id']} ({cp['entries']} entries, {cp['timestamp'][:19]})")
@@ -212,7 +221,7 @@ def main():
         if user_input.startswith("/checkpoint"):
             parts = user_input.split(maxsplit=1)
             cpid = parts[1] if len(parts) > 1 else f"cp_{int(__import__('time').time())}"
-            harness.memory.checkpoint(cpid)
+            nm.memory.checkpoint(cpid)
             print(f"检查点已创建: {cpid}")
             continue
 
@@ -220,7 +229,7 @@ def main():
             force_model = user_input.split(maxsplit=1)[1]
             print(f"临时切换模型: {force_model}")
             # 下一轮使用 force_model
-            response = harness.run(
+            response = nm.run(
                 input(f">>> [模型已切换为 {force_model}] 请输入: ").strip(),
                 user_id=user_id,
                 force_model=force_model,
@@ -228,7 +237,7 @@ def main():
             continue
 
         if user_input == "/usage":
-            report = harness.task_router.mm.get_usage_report(user_id=user_id)
+            report = nm.task_router.mm.get_usage_report(user_id=user_id)
             print(f"  总调用: {report['total_calls']} 次")
             print(f"  总 Token: {report['total_tokens']}")
             print(f"  总费用: ¥{report['total_cost']:.2f}")
@@ -238,7 +247,7 @@ def main():
 
         # 正常对话
         print()
-        response = harness.run(user_input, user_id=user_id, force_model=args.model)
+        response = nm.run(user_input, user_id=user_id, force_model=args.model)
         print(f"\n")
 
 

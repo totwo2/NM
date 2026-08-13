@@ -57,7 +57,7 @@ class HarnessConfig:
 
     # --- 路径 ---
     workspace_dir: str = field(default_factory=os.getcwd)
-    config_dir: str = field(default_factory=lambda: os.path.join(os.getcwd(), ".harness"))
+    config_dir: str = field(default_factory=lambda: os.path.join(os.getcwd(), ".nm"))
     memory_store_path: str = ""
     transcript_path: str = ""
     usage_log_path: str = ""
@@ -121,34 +121,34 @@ class HarnessConfig:
         config = cls()
 
         # 路径
-        if v := os.getenv("HARNESS_WORKSPACE"):
+        if v := os.getenv("NM_WORKSPACE"):
             config.workspace_dir = v
-        if v := os.getenv("HARNESS_CONFIG_DIR"):
+        if v := os.getenv("NM_CONFIG_DIR"):
             config.config_dir = v
 
         # Agent 循环
-        if v := os.getenv("HARNESS_MAX_TURNS"):
+        if v := os.getenv("NM_MAX_TURNS"):
             config.max_turns = int(v)
-        if v := os.getenv("HARNESS_STREAM"):
+        if v := os.getenv("NM_STREAM"):
             config.stream_output = v.lower() == "true"
 
         # 权限
-        if v := os.getenv("HARNESS_PERMISSION"):
+        if v := os.getenv("NM_PERMISSION"):
             try:
                 config.permission_mode = PermissionMode(v)
             except ValueError:
                 pass
 
         # 模型
-        if v := os.getenv("HARNESS_DEFAULT_MODEL"):
+        if v := os.getenv("NM_DEFAULT_MODEL"):
             config.default_model = v
 
         # 记忆
-        if v := os.getenv("HARNESS_MEMORY_TTL_DAYS"):
+        if v := os.getenv("NM_MEMORY_TTL_DAYS"):
             config.memory_ttl_days = int(v)
 
         # 工具
-        if v := os.getenv("HARNESS_TOOL_TIMEOUT"):
+        if v := os.getenv("NM_TOOL_TIMEOUT"):
             config.tool_timeout_default = int(v)
 
         return config

@@ -12,7 +12,7 @@ from .workflow import WorkflowEngine
 from .oa_store import OAStore
 from .presets import register_all_presets
 
-logger = logging.getLogger("harness.oa.api")
+logger = logging.getLogger("nm.oa.api")
 
 # ============================================================================
 # 模型
@@ -48,7 +48,7 @@ def get_engine(workspace_dir: str | None = None) -> WorkflowEngine:
     if workspace_dir is None:
         workspace_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    store_path = os.path.join(workspace_dir, ".harness", "oa_store.json")
+    store_path = os.path.join(workspace_dir, ".nm", "oa_store.json")
     store = OAStore(store_path)
     engine = WorkflowEngine(store)
 
@@ -96,7 +96,7 @@ def mount_oa_routes(app: FastAPI, workspace_dir: str | None = None):
             raise HTTPException(400, "缺少 user_id 或 def_id")
 
         # 加载用户 HR 数据
-        from harness.users.user_store import UserStore
+        from nm.users.user_store import UserStore
         users_path = os.path.normpath(os.path.join(os.path.dirname(engine.store.path), "users.json"))
         user_store = UserStore(users_path)
         user = user_store.get(user_id)
@@ -324,7 +324,7 @@ def mount_oa_routes(app: FastAPI, workspace_dir: str | None = None):
 def mount_oa_admin_routes(app):
     """挂载 OA 管理员专用路由（流程模板 CRUD）"""
     
-    from harness.users.user_store import UserStore
+    from nm.users.user_store import UserStore
     import csv, io
     from openpyxl import load_workbook
     
@@ -333,7 +333,7 @@ def mount_oa_admin_routes(app):
     def get_users():
         nonlocal _user_store
         if _user_store is None:
-            path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".harness", "users.json")
+            path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".nm", "users.json")
             _user_store = UserStore(path)
         return _user_store
     

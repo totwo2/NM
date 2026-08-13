@@ -94,7 +94,7 @@ class UserStore:
 
     def seed_demo(self, passwords: dict[str, str] | None = None):
         """预置演示用户，可传入 {user_id: password} 指定密码（默认 demo123）"""
-        from harness.auth import hash_password
+        from nm.auth import hash_password
 
         default_pw = (passwords or {}).get("__default__", "demo123")
         with self.lock:

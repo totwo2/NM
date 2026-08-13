@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from harness.memory.memory_adapter import MemoryAdapter
+from nm.memory.memory_adapter import MemoryAdapter
 
 
 def make_adapter(tmp_path, ttl_days=30):

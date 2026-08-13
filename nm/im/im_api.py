@@ -25,7 +25,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 
-logger = logging.getLogger("harness.im")
+logger = logging.getLogger("nm.im")
 
 # ---- 延迟初始化（避免启动时 import 循环）----
 _engine: Any = None
@@ -34,9 +34,9 @@ _engine: Any = None
 def get_engine() -> Any:
     global _engine
     if _engine is None:
-        from harness.im.im_engine import IMEngine
+        from nm.im.im_engine import IMEngine
         import os
-        store_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".harness", "im_store.json")
+        store_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".nm", "im_store.json")
         _engine = IMEngine(store_path=store_path)
         # 初始化演示数据（首次启动）
         try:

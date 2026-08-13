@@ -5,8 +5,8 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from harness.context_manager import ContextManager
-from harness.types import Message, ContentBlock
+from nm.context_manager import ContextManager
+from nm.types import Message, ContentBlock
 
 
 def make_manager(threshold=40, keep_recent=20):

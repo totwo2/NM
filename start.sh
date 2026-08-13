@@ -5,7 +5,7 @@ set -e
 cd "$(dirname "$0")"
 
 PORT="${1:-8787}"
-export HARNESS_PORT="$PORT"
+export NM_PORT="$PORT"
 
 if [ ! -d ".venv" ]; then
   echo "未找到 .venv，正在创建虚拟环境..."

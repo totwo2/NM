@@ -19,8 +19,7 @@ htmlcov/
 .ruff_cache/
 
 # ===== 运行时数据（含敏感信息，绝不提交）=====
-.harness/
-.workbuddy/
+.nm/
 
 # ===== 备份与临时 =====
 *.bak
@@ -32,8 +31,9 @@ htmlcov/
 .idea/
 .vscode/
 *.iml
-# 包内残留数据
-harness/.harness/
+# 旧品牌残留目录（迁移用，不提交）
+.workbuddy/
+.harness/
 
 # 本地端到端脚本与个人日志
 test_e2e.py

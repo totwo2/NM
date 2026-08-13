@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from harness.im.im_store import IMStore, Group, Member, Message
+from nm.im.im_store import IMStore, Group, Member, Message
 
 
 class IMEngine:

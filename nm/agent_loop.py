@@ -34,7 +34,7 @@ class AgentLoop:
 
     使用:
         harness = AgentLoop(config, memory, task_router, tool_registry, ctx_mgr, perm_checker)
-        response = harness.run("帮我写一份通知", user_id="zhangsan")
+        response = nm.run("帮我写一份通知", user_id="zhangsan")
     """
 
     def __init__(

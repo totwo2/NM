@@ -14,7 +14,7 @@ COPY . .
 
 EXPOSE 8787
 
-ENV HARNESS_PORT=8787
-ENV HARNESS_DATA_DIR=/app/.harness
+ENV NM_PORT=8787
+ENV NM_DATA_DIR=/app/.nm
 
-CMD ["harness-web"]
+CMD ["nm-web"]
