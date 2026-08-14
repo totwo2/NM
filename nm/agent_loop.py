@@ -101,10 +101,10 @@ class AgentLoop:
         # 重置防循环追踪
         self.memory.reset_loop_tracker()
 
-        # Step 1: 回灌记忆
+        # Step 1: 清空窗口，再回灌记忆（顺序必须 clear → set_memory，否则记忆会被 clear 冲掉）
+        self.context.clear()
         memory_text = self.memory.recall([self._session_id, f"user:{user_id}", "project:general"])
         self.context.set_memory(memory_text)
-        self.context.clear()
 
         # Step 1.5: 恢复会话历史（跨请求上下文连续性）
         if self.session_store is not None:

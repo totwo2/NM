@@ -11,8 +11,9 @@
 
 import json
 import logging
+import os
 import re
-from typing import Any
+from typing import Any, Callable
 
 from .types import Message, ContentBlock, ToolResult
 
@@ -37,18 +38,30 @@ class ContextManager:
         compaction_threshold: int = 40,
         keep_recent: int = 20,
         output_style_rules: str = "",
+        on_compaction: Callable[[list[dict]], None] | None = None,
+        archive_path: str | None = None,
     ):
         self.system_prompt_template = system_prompt_template
         self.workspace_dir = workspace_dir
         self.compaction_threshold = compaction_threshold
         self.keep_recent = keep_recent
         self.output_style_rules = output_style_rules
+        # 压缩回调: 中间层 → 记忆体 的解耦事件通道。
+        # 每次发生上下文压缩时触发，回调收到被压缩的 tool_result 原文列表
+        # ({"tool_name", "tool_id", "original", "placeholder"})，由调用方决定
+        # 是否沉淀为记忆（如 AgentLoop 注入 MemoryAdapter 做提取）。
+        self.on_compaction = on_compaction
+        # CCR 存档持久化路径（默认 workspace/.nm/compression_archive.json）
+        self.archive_path = archive_path or os.path.join(
+            workspace_dir, ".nm", "compression_archive.json"
+        )
 
         self.messages: list[Message] = []
         self._memory_context: str = ""
         self._tools_context: str = ""
-        # 压缩存档: tool_call_id → 原始完整内容（CCR 可恢复机制）
+        # 压缩存档: tool_call_id → 原始完整内容（CCR 可恢复机制，落盘持久化）
         self._compression_archive: dict[str, str] = {}
+        self._load_archive()
 
     # ========================================================================
     # 消息操作
@@ -125,13 +138,42 @@ class ContextManager:
     # 压缩
     # ========================================================================
 
+    def _load_archive(self) -> None:
+        """从磁盘加载 CCR 存档（进程重启/换模型后仍可恢复原文）"""
+        try:
+            with open(self.archive_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                self._compression_archive = data
+        except FileNotFoundError:
+            pass
+        except Exception:
+            logger.warning(f"Failed to load compression archive: {self.archive_path}")
+
+    def _save_archive(self) -> None:
+        """把 CCR 存档写入磁盘（原子写）"""
+        try:
+            os.makedirs(os.path.dirname(self.archive_path) or ".", exist_ok=True)
+            tmp = self.archive_path + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(self._compression_archive, f, ensure_ascii=False)
+            os.replace(tmp, self.archive_path)
+        except Exception:
+            logger.warning(f"Failed to save compression archive: {self.archive_path}")
+
     def maybe_compact(self) -> bool:
-        """如果消息数超过阈值，执行上下文压缩。返回是否执行了压缩"""
+        """如果消息数超过阈值，执行上下文压缩。返回是否执行了压缩
+
+        压缩时通过 on_compaction 回调把被压缩的 tool_result 原文
+        (含 tool_name/tool_id) 交给记忆体沉淀——这是"压缩 → 回灌"
+        闭环的事件通道，ContextManager 不关心记忆体怎么用这些内容。
+        """
         if len(self.messages) <= self.compaction_threshold:
             return False
 
         compact_at = len(self.messages) - self.keep_recent
         compacted_count = 0
+        compacted_items: list[dict] = []
 
         for i in range(compact_at):
             msg = self.messages[i]
@@ -143,11 +185,24 @@ class ContextManager:
                         self._compression_archive[tool_id] = block.text
                     # 保留工具名，替换内容
                     tool_name = getattr(block, "tool_name", "") or "unknown"
-                    block.text = f"[已压缩: {tool_name} 工具的返回结果，上下文空间有限已省略原文]"
+                    placeholder = f"[已压缩: {tool_name} 工具的返回结果，上下文空间有限已省略原文]"
+                    block.text = placeholder
+                    compacted_items.append({
+                        "tool_name": tool_name,
+                        "tool_id": tool_id,
+                        "original": self._compression_archive.get(tool_id, ""),
+                        "placeholder": placeholder,
+                    })
                     compacted_count += 1
 
         if compacted_count > 0:
             logger.info(f"Context compacted: {compacted_count} tool_results replaced")
+            self._save_archive()  # CCR 落盘：重启/换模型后可恢复原文
+            if self.on_compaction and compacted_items:
+                try:
+                    self.on_compaction(compacted_items)
+                except Exception:
+                    logger.exception("on_compaction callback failed (memory sink skipped)")
 
         return compacted_count > 0
 
@@ -236,9 +291,13 @@ class ContextManager:
         return int(total)
 
     def clear(self) -> None:
-        """清空消息列表（保留 system prompt 配置）"""
+        """清空窗口内消息列表。
+
+        注意：只清 messages（窗口态），保留 memory/tools 上下文。
+        AgentLoop 每次 run() 先 clear() 再 set_memory()，
+        若这里把 _memory_context 一起清掉，回灌记忆会在进入 system prompt 前丢失。
+        """
         self.messages.clear()
-        self._memory_context = ""
 
     # ========================================================================
     # 智能压缩（内容类型路由 — 参考 Headroom 思路自研实现）

@@ -312,8 +312,31 @@ def get_harness() -> AgentLoop:
     # Config
     config = HarnessConfig(workspace_dir=WORKSPACE, permission_mode=PermissionMode.AUTO, web_mode=True, output_style="full")
 
-    # Context
-    ctx = ContextManager(config.system_prompt_template, WORKSPACE, output_style_rules=config.output_style_rules)
+    # Context — 中间层（窗口态）
+    # on_compaction: 上下文被压缩时，把被压掉的 tool_result 原文沉淀进记忆体，
+    # 实现“压缩 → 回灌”闭环（解耦：ContextManager 只发事件，不感知记忆体）
+    def _on_compaction(compacted_items: list[dict]) -> None:
+        try:
+            for item in compacted_items:
+                original = item.get("original", "") or ""
+                if original:
+                    mem.ingest(
+                        "tool",
+                        f"[{item.get('tool_name', 'unknown')}] {original}",
+                        scope="session:compaction",
+                    )
+            if compacted_items:
+                mem.distill("session:compaction")
+                logger.info(f"Compaction → memory: {len(compacted_items)} tool results distilled")
+        except Exception as e:
+            logger.warning(f"Compaction memory sink failed: {e}")
+
+    ctx = ContextManager(
+        config.system_prompt_template,
+        WORKSPACE,
+        output_style_rules=config.output_style_rules,
+        on_compaction=_on_compaction,
+    )
 
     # Permission
     perm = PermissionChecker(mode=PermissionMode.AUTO, web_mode=True)
