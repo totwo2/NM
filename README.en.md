@@ -28,7 +28,7 @@ N.M is not another OA system. It's an **AI Agent Office Hub** — everything you
 | **🤖 AgentLoop** | Recall → route → LLM → execute → compress → distill — the entire pipeline is traceable |
 | **💰 Token-Saving Design** | Three-tier model routing (local / cloud / strong) + smart cache (LLM-only, no tool results) + type-aware compression (JSON / logs / file lists / long text) + zero-LLM form field extraction (regex-only) |
 | **📋 Zero-Database OA** | Single JSON file workflow engine: 10 built-in templates (leave, reimbursement, contracts, seal requests, transfers…), state machine (draft → pending → completed/rejected/withdrawn), supports return/forward/recall. Backup = copy the folder. |
-| **💬 Built-in IM** | Group management, read receipts, 2-min undo; OA approvals naturally triggered in IM (mention "leave" in a chat → approval card appears) |
+| **💬 Built-in IM** | Group management, read receipts, 2-min undo; in the AI chat box, mentioning intent like "leave" auto-pops an approval card, and approval results are notified via IM direct message |
 | **🦾 Self-Evolution** | Automatically distills improvement suggestions from failures; Ratchet verifier ensures scores never regress |
 | **🔐 Auth Security** | PBKDF2 password hash + Bearer Token sessions, anti-impersonation |
 | **🪶 Minimal Deployment** | Single-file SPA frontend + FastAPI backend + Docker one-liner. Zero burden on enterprise IT. |
@@ -41,8 +41,8 @@ N.M is not another OA system. It's an **AI Agent Office Hub** — everything you
 
 ```bash
 # 1. Clone & install
-git clone <your-repo-url>
-cd nm
+git clone https://github.com/totwo2/NM.git
+cd NM
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -85,6 +85,8 @@ docker run -d -p 8787:8787 \
 | `zhangsan` | `demo123` | Employee (R&D) |
 | `lisi` | `demo123` | Manager (R&D) |
 | `wangwu` | `demo123` | Employee (Admin) |
+
+**Default passwords are for local demo only; change all account passwords before deploying to any external/intranet network (Docker binds 0.0.0.0 by default).**
 
 ---
 
@@ -155,11 +157,8 @@ nm/
 │   ├── agent_loop.py          #   Orchestrator (the only coupling point)
 │   ├── context_manager.py     #   Window layer: messages / compression / CCR / events
 │   ├── memory/               #   Memory layer: extract / arbitrate / distill / persist
-│   │   ├── memcore_impl.py   #     MemoryCore facade
-│   │   ├── memory_adapter.py #     Adapter (TTL / anti-loop / deep distill)
-│   │   ├── distiller.py      #     Distillation pipeline
-│   │   ├── extractor.py      #     Semantic extractor (Heuristic / LLM)
-│   │   └── arbiter.py        #     Conflict arbiter
+│   │   ├── memcore_impl.py   #     MemoryCore facade (extract / arbitrate / distill)
+│   │   └── memory_adapter.py #     Adapter (TTL / anti-loop / deep distill)
 │   ├── task_router.py        #   Model router (local / cloud / strong)
 │   ├── model_manager.py      #   Model accounts / quota / cost
 │   ├── session_store.py       #   Session history (cross-request)

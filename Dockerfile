@@ -17,4 +17,4 @@ EXPOSE 8787
 ENV NM_PORT=8787
 ENV NM_DATA_DIR=/app/.nm
 
-CMD ["nm-web"]
+CMD ["python", "web/server.py"]

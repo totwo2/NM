@@ -1,7 +1,6 @@
-# N.M — 企业智能办公助手 / Enterprise AI Office Assistant
+# N.M — 企业智能办公助手
 
 > 打工人自己的 AI 工作台：AI 助手 + 手搓 OA 审批 + 内部沟通，一个入口搞定全部办公操作。
-> A worker's own AI workstation: AI assistant + self-built OA approval + internal IM, all office work in one entry.
 
 **English version: [README.en.md](README.en.md)**
 
@@ -29,7 +28,7 @@ N.M 不是又一个大号 OA 系统，而是一个 **「AI 智能体办公入口
 | **🤖 AgentLoop 主循环** | 记忆回灌 → 工具路由 → LLM 调用 → 工具执行 → 智能压缩 → 记忆沉淀，全流程可追踪 |
 | **💰 省 token 设计** | 三层模型路由（本地/云端/强模型）+ 智能缓存（只缓存纯 LLM 生成）+ 上下文智能压缩（JSON/日志/文件列表/大段文本分类型压缩）+ 表单字段纯正则提取（零 LLM 调用） |
 | **📋 零数据库 OA** | 单 JSON 文件工作流引擎：请假/报销/合同/用印/调岗等 10 种预设模板，状态机 draft→pending→completed/rejected/withdrawn，支持退回/转办/撤回，备份 = 复制目录 |
-| **💬 内置 IM** | 群组管理、消息已读、2 分钟撤回；OA 审批在 IM 私聊中自然触发（聊到"请假"就弹出审批卡片） |
+| **💬 内置 IM** | 群组管理、消息已读、2 分钟撤回；在 AI 对话框里说到"请假"等意图自动弹出审批卡片，审批结果通过 IM 私聊通知 |
 | **🦾 自进化** | 从失败中自动提炼改进建议，Ratchet 验证器保证只升不降 |
 | **🔐 认证安全** | PBKDF2 密码哈希 + Bearer Token 会话，防伪造身份 |
 | **🪶 极轻部署** | 单文件前端 SPA + FastAPI 后端 + Docker 一键部署，企业 IT 零负担 |
@@ -41,25 +40,24 @@ N.M 不是又一个大号 OA 系统，而是一个 **「AI 智能体办公入口
 ### 本地运行 / Local
 
 ```bash
-# 1. 克隆并安装 / Clone & install
-git clone <your-repo-url>
-cd nm
+# 1. 克隆并安装
+git clone https://github.com/totwo2/NM.git
+cd NM
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-# 2. 配置模型（二选一）/ Configure model (pick one)
-# 方式 A: 环境变量 / Env vars
+# 2. 配置模型（二选一）
+# 方式 A: 环境变量
 export OPENAI_API_KEY="sk-xxx"
 export OPENAI_BASE_URL="https://api.openai.com/v1"
 export NM_MODEL="gpt-4o-mini"
 
 # 方式 B: 自动发现 ~/.qclaw/openclaw.json（已有配置则跳过）
-#         Auto-discover ~/.qclaw/openclaw.json (skip if configured)
 
-# 3. 启动 / Start
+# 3. 启动
 ./start.sh
-# 或 / or: python web/server.py
+# 或：python web/server.py
 ```
 
 打开 http://localhost:8787 即可使用。
@@ -87,6 +85,8 @@ docker run -d -p 8787:8787 \
 | `zhangsan` | `demo123` | 普通员工（研发部）/ Employee (R&D) |
 | `lisi` | `demo123` | 经理（研发部）/ Manager (R&D) |
 | `wangwu` | `demo123` | 员工（行政部）/ Employee (Admin) |
+
+**默认密码仅供本地演示；对外网部署前必须修改所有账号密码**（Docker 默认绑定 0.0.0.0）。
 
 ---
 
@@ -153,15 +153,12 @@ docker run -d -p 8787:8787 \
 
 ```
 nm/
-├── nm/                  # 核心引擎 / Core engine
+├── nm/                  # 核心引擎
 │   ├── agent_loop.py        #   Agent 主循环（组装点，唯一的耦合处）
 │   ├── context_manager.py   #   中间层：窗口管理/压缩/CCR/事件回调
 │   ├── memory/              #   记忆体：提取/仲裁/蒸馏/持久化
-│   │   ├── memcore_impl.py  #     MemoryCore 核心门面
-│   │   ├── memory_adapter.py#     适配层（TTL/防循环/深度蒸馏）
-│   │   ├── distiller.py     #     蒸馏流水线
-│   │   ├── extractor.py     #     语义提取（Heuristic/LLM）
-│   │   └── arbiter.py       #     冲突仲裁
+│   │   ├── memcore_impl.py  #     MemoryCore 门面（含提取/仲裁/蒸馏）
+│   │   └── memory_adapter.py#     适配层（TTL/防循环/深度蒸馏）
 │   ├── task_router.py       #   智能模型路由（本地/云端/强模型）
 │   ├── model_manager.py     #   模型账号/配额/费用
 │   ├── session_store.py     #   会话历史持久化（跨请求）
